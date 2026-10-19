@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { requireAuth } from '@/lib/auth-guard'
 import { ApprovalActions } from '@/components/admin/approval-actions'
+import { InspectionGallery } from '@/components/admin/inspection-gallery'
 
 export const metadata: Metadata = {
   title: 'Detail Booking',
@@ -283,9 +284,11 @@ export default async function BookingDetailPage({
                         <div style={{ fontStyle: 'italic', fontSize: 'var(--font-size-xs)' }}>{insp.incidentNotes}</div>
                       </div>
                     )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--color-gray-500)' }}>Foto</span>
-                      <span>📷 {insp.photos.length} foto</span>
+                    <div style={{ marginTop: 'var(--space-2)' }}>
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)', marginBottom: '0.25rem', fontWeight: 600 }}>
+                        📷 Foto Dokumentasi ({insp.photos.length} foto):
+                      </div>
+                      <InspectionGallery photos={insp.photos} />
                     </div>
                     {insp.reviewAction && (
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
