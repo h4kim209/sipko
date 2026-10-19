@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ReviewActions } from '@/components/admin/review-actions'
+import { InspectionGallery } from '@/components/admin/inspection-gallery'
 
 export const metadata: Metadata = { title: 'Pemeriksaan Pengembalian' }
 export const dynamic = 'force-dynamic'
@@ -131,8 +132,11 @@ export default async function PemeriksaanKembaliPage() {
                           <strong>⚠️ Catatan Insiden:</strong> {postInspection.incidentNotes}
                         </div>
                       )}
-                      <div style={{ marginTop: 'var(--space-3)', fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)' }}>
-                        📷 {postInspection.photos.length} foto diunggah
+                      <div style={{ marginTop: 'var(--space-3)' }}>
+                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)', marginBottom: '0.25rem', fontWeight: 600 }}>
+                          📷 Foto Dokumentasi Pengembalian ({postInspection.photos.length} foto):
+                        </div>
+                        <InspectionGallery photos={postInspection.photos} />
                       </div>
                     </div>
                   )}
