@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     'bullmq',
     'ioredis',
     '@prisma/client',
+    'jspdf',
+    'jspdf-autotable',
   ],
   poweredByHeader: false,
   // Server-side image optimization
