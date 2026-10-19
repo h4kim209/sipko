@@ -41,7 +41,8 @@ export default function WhatsAppPage() {
   const [status, setStatus] = useState<string>('CONNECTING')
   const [qr, setQr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [countdown, setCountdown] = useState(30)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [countdown, setCountdown] = useState(10)
   const [error, setError] = useState('')
 
   const fetchStatus = useCallback(async () => {
@@ -49,7 +50,7 @@ export default function WhatsAppPage() {
       setError('')
       const res = await fetch('/api/whatsapp/qr', { cache: 'no-store' })
       if (res.status === 401) {
-        setError('Hanya Super Admin yang dapat mengakses halaman ini.')
+        setError('Hanya Administrator yang dapat mengakses halaman ini.')
         setLoading(false)
         return
       }
@@ -57,7 +58,7 @@ export default function WhatsAppPage() {
       const data = await res.json()
       setStatus(data.status)
       setQr(data.qr || null)
-      setCountdown(30)
+      setCountdown(data.status === 'QR_PENDING' || data.status === 'CONNECTING' ? 5 : 20)
     } catch (err: any) {
       setError(err.message || 'Gagal memuat status WhatsApp.')
     } finally {
@@ -65,15 +66,30 @@ export default function WhatsAppPage() {
     }
   }, [])
 
-  // Auto-refresh setiap 30 detik, lebih cepat saat QR_PENDING
+  const handleReconnect = async () => {
+    setActionLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/whatsapp/qr', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Gagal memulai koneksi WhatsApp')
+      setStatus(data.status)
+      setQr(data.qr || null)
+      setCountdown(5)
+    } catch (err: any) {
+      setError(err.message || 'Gagal menginisialisasi WhatsApp.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Auto-refresh setiap 5 detik saat CONNECTING / QR_PENDING, atau 20 detik saat status lain
   useEffect(() => {
     fetchStatus()
-    const interval = setInterval(
-      () => {
-        fetchStatus()
-      },
-      status === 'QR_PENDING' ? 15000 : 30000
-    )
+    const intervalTime = status === 'QR_PENDING' || status === 'CONNECTING' ? 5000 : 20000
+    const interval = setInterval(() => {
+      fetchStatus()
+    }, intervalTime)
     return () => clearInterval(interval)
   }, [fetchStatus, status])
 
@@ -134,13 +150,21 @@ export default function WhatsAppPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
                     <button
-                      className="btn btn-primary btn-sm"
-                      onClick={fetchStatus}
-                      style={{ flex: 1 }}
+                      className={`btn btn-primary btn-sm${actionLoading ? ' btn-loading' : ''}`}
+                      onClick={handleReconnect}
+                      disabled={actionLoading}
+                      style={{ flex: 1, minWidth: '160px' }}
                     >
-                      🔄 Refresh Status
+                      {actionLoading ? 'Menghubungkan...' : '🚀 Hubungkan / Buat QR Baru'}
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={fetchStatus}
+                      disabled={actionLoading}
+                    >
+                      🔄 Refresh
                     </button>
                     <div style={{
                       display: 'flex',
@@ -152,7 +176,7 @@ export default function WhatsAppPage() {
                       padding: '0.375rem 0.75rem',
                       borderRadius: 'var(--radius-md)',
                     }}>
-                      Auto-refresh: {countdown}s
+                      Auto: {countdown}s
                     </div>
                   </div>
                 </div>

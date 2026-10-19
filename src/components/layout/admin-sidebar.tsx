@@ -18,6 +18,7 @@ const MENU_ITEMS = [
   { label: 'Riwayat Peminjaman', href: '/admin/riwayat', icon: '📁' },
   { label: 'Laporan & Cetak', href: '/admin/laporan', icon: '🖨️' },
   { section: 'SISTEM' },
+  { label: 'WhatsApp Notifikasi', href: '/admin/whatsapp', icon: '📱' },
   { label: 'Manajemen Akun', href: '/admin/akun', icon: '👥' },
   { label: 'Pengaturan', href: '/admin/pengaturan', icon: '⚙️' },
   { label: 'Audit Log', href: '/admin/audit-log', icon: '📜' },
