@@ -3,7 +3,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const MENU_ITEMS = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: '📊' },
@@ -33,6 +33,20 @@ type Props = {
 export function AdminSidebar({ userName, userRole }: Props) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+
+  // Mobile toggle listener via React lifecycle (menghindari raw script tag di React 19)
+  useEffect(() => {
+    const handleToggle = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target?.closest('#sidebar-toggle')) {
+        setOpen((prev) => !prev)
+      }
+    }
+    document.addEventListener('click', handleToggle)
+    return () => {
+      document.removeEventListener('click', handleToggle)
+    }
+  }, [])
 
   return (
     <>
@@ -87,19 +101,6 @@ export function AdminSidebar({ userName, userRole }: Props) {
           </div>
         </div>
       </aside>
-
-      {/* Mobile toggle — attach via script */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            document.addEventListener('click', function(e) {
-              if (e.target.closest('#sidebar-toggle')) {
-                document.querySelector('.sidebar').classList.toggle('open');
-              }
-            });
-          `,
-        }}
-      />
     </>
   )
 }
