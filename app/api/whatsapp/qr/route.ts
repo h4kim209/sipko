@@ -1,8 +1,8 @@
 // app/api/whatsapp/qr/route.ts
 // GET — Status koneksi WhatsApp + QR (data URL) untuk dipindai (SUPER_ADMIN / ADMIN).
-// POST — Trigger reconnect / buat QR code baru.
+// POST — Reconnect / Reset sesi & buat QR code baru.
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
 import { apiAuth } from '@/lib/auth-guard'
 import { getWhatsAppAdapter } from '@/adapters/whatsapp'
@@ -19,6 +19,8 @@ export async function GET() {
     getStatus?: () => string
     getQrCode?: () => Promise<string | null>
     initialize?: () => Promise<void>
+    getConnectedPhone?: () => string | null
+    getLastError?: () => string | null
   }
 
   let status = adapter.getStatus?.() ?? 'DEV_MODE'
@@ -31,41 +33,56 @@ export async function GET() {
 
   const rawQr = (await adapter.getQrCode?.()) ?? null
   const qrDataUrl = rawQr ? await QRCode.toDataURL(rawQr, { width: 320, margin: 1 }) : null
+  const phoneConnected = adapter.getConnectedPhone?.() ?? null
+  const lastError = adapter.getLastError?.() ?? null
 
   return NextResponse.json(
-    { status, qr: qrDataUrl },
+    { status, qr: qrDataUrl, phoneConnected, lastError },
     { headers: { 'Cache-Control': 'no-store' } }
   )
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const session = await apiAuth(['SUPER_ADMIN', 'ADMIN'])
   if (!session?.user) {
     return NextResponse.json({ error: 'Tidak terotorisasi' }, { status: 401 })
   }
 
-  const adapter = getWhatsAppAdapter() as ReturnType<typeof getWhatsAppAdapter> & {
-    getStatus?: () => string
-    getQrCode?: () => Promise<string | null>
-    reconnect?: () => Promise<void>
-    initialize?: () => Promise<void>
+  try {
+    const body = await request.json().catch(() => ({}))
+    const reset = Boolean(body?.reset)
+
+    const adapter = getWhatsAppAdapter() as ReturnType<typeof getWhatsAppAdapter> & {
+      getStatus?: () => string
+      getQrCode?: () => Promise<string | null>
+      reconnect?: (resetSession?: boolean) => Promise<void>
+      initialize?: () => Promise<void>
+      getConnectedPhone?: () => string | null
+    }
+
+    if (typeof adapter.reconnect === 'function') {
+      await adapter.reconnect(reset)
+    } else if (typeof adapter.initialize === 'function') {
+      await adapter.initialize()
+    }
+
+    // Beri jeda 2 detik agar Baileys event listener menangkap update QR code
+    await new Promise((r) => setTimeout(r, 2000))
+
+    const status = adapter.getStatus?.() ?? 'CONNECTING'
+    const rawQr = (await adapter.getQrCode?.()) ?? null
+    const qrDataUrl = rawQr ? await QRCode.toDataURL(rawQr, { width: 320, margin: 1 }) : null
+    const phoneConnected = adapter.getConnectedPhone?.() ?? null
+
+    return NextResponse.json(
+      { success: true, status, qr: qrDataUrl, phoneConnected },
+      { headers: { 'Cache-Control': 'no-store' } }
+    )
+  } catch (err: any) {
+    console.error('[WhatsApp QR Route Error]', err)
+    return NextResponse.json(
+      { error: err?.message || 'Gagal merefresh koneksi WhatsApp.' },
+      { status: 500 }
+    )
   }
-
-  if (typeof adapter.reconnect === 'function') {
-    await adapter.reconnect()
-  } else if (typeof adapter.initialize === 'function') {
-    await adapter.initialize()
-  }
-
-  // Tunggu 1-2 detik agar Baileys event listener menangkap QR code
-  await new Promise((r) => setTimeout(r, 1500))
-
-  const status = adapter.getStatus?.() ?? 'CONNECTING'
-  const rawQr = (await adapter.getQrCode?.()) ?? null
-  const qrDataUrl = rawQr ? await QRCode.toDataURL(rawQr, { width: 320, margin: 1 }) : null
-
-  return NextResponse.json(
-    { success: true, status, qr: qrDataUrl },
-    { headers: { 'Cache-Control': 'no-store' } }
-  )
 }
