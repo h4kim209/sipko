@@ -25,8 +25,14 @@ export async function GET() {
     },
   })
 
-  return NextResponse.json({ users })
-}
+  return NextResponse.json({
+    users,
+    currentUser: {
+      id: session.user?.id,
+      email: session.user?.email,
+      role: session.user?.role,
+    },
+  })
 
 export async function POST(request: NextRequest) {
   const session = await apiAuth(['ADMIN', 'SUPER_ADMIN'])
