@@ -1,6 +1,6 @@
 // app/api/whatsapp/qr/route.ts
 // GET — Status koneksi WhatsApp + QR (data URL) untuk dipindai (SUPER_ADMIN / ADMIN).
-// POST — Reconnect / Reset sesi & buat QR code baru.
+// POST — Reconnect / Reset sesi / Request Pairing Code.
 
 import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}))
-    const reset = Boolean(body?.reset)
 
     const adapter = getWhatsAppAdapter() as ReturnType<typeof getWhatsAppAdapter> & {
       getStatus?: () => string
@@ -58,7 +57,23 @@ export async function POST(request: NextRequest) {
       reconnect?: (resetSession?: boolean) => Promise<void>
       initialize?: () => Promise<void>
       getConnectedPhone?: () => string | null
+      requestPairingCode?: (phoneNumber: string) => Promise<string>
     }
+
+    // Aksi 1: Minta Pairing Code 8-Digit (Tautkan dengan nomor telepon)
+    if (body.action === 'pairing_code') {
+      if (!body.phone || typeof body.phone !== 'string') {
+        return NextResponse.json({ error: 'Nomor telepon wajib diisi.' }, { status: 400 })
+      }
+      if (typeof adapter.requestPairingCode !== 'function') {
+        return NextResponse.json({ error: 'Fitur pairing code tidak tersedia pada adapter ini.' }, { status: 400 })
+      }
+      const pairingCode = await adapter.requestPairingCode(body.phone)
+      return NextResponse.json({ success: true, pairingCode })
+    }
+
+    // Aksi 2: Reconnect / Reset Sesi Bersih
+    const reset = Boolean(body?.reset)
 
     if (typeof adapter.reconnect === 'function') {
       await adapter.reconnect(reset)

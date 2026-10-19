@@ -1,5 +1,5 @@
 // src/adapters/whatsapp/baileys-adapter.ts
-// Baileys WhatsApp adapter dengan Global Singleton & Robust Session Lifecycle
+// Baileys WhatsApp adapter dengan Global Singleton, makeCacheableSignalKeyStore & Fast 515 Handshake
 
 import pino from 'pino'
 import fs from 'fs'
@@ -109,6 +109,7 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       const {
         default: makeWASocket,
         useMultiFileAuthState,
+        makeCacheableSignalKeyStore,
         DisconnectReason,
         fetchLatestBaileysVersion,
         Browsers,
@@ -121,10 +122,10 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         const v = await fetchLatestBaileysVersion()
         version = v.version
       } catch (verErr) {
-        console.warn('[Baileys] Menggunakan versi internal Baileys:', verErr)
+        console.warn('[Baileys] Menggunakan versi default internal:', verErr)
       }
 
-      // Tutup socket lama bila ada sebelum membuat socket baru
+      // Tutup socket lama bila ada
       if (container.connection.sock) {
         try {
           container.connection.sock.ev.removeAllListeners('connection.update')
@@ -134,10 +135,16 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         container.connection.sock = null
       }
 
+      const logger = pino({ level: process.env.WA_LOG_LEVEL || 'warn' }) as any
+
       const sock = makeWASocket({
         version,
-        auth: state,
-        logger: pino({ level: process.env.WA_LOG_LEVEL || 'warn' }) as any,
+        auth: {
+          creds: state.creds,
+          // CRITICAL: makeCacheableSignalKeyStore mencegah bottleneck disk I/O pada Windows saat handshake
+          keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
+        },
+        logger,
         printQRInTerminal: false,
         browser: Browsers.ubuntu('Chrome'),
         syncFullHistory: false,
@@ -179,6 +186,18 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
           container.connection.sock = null
           container.connection.lastError = errorMsg
 
+          // KUNCI PERBAIKAN: Kode 515 (restartRequired) adalah respon WA server pasca scan QR berhasil.
+          // Harus segera reconnect instan agar ponsel tidak mengira timeout/cek koneksi internet!
+          if (statusCode === DisconnectReason.restartRequired || statusCode === 515) {
+            console.log('[Baileys] ⚡ Kode 515 (restartRequired) pasca scan. Menyambungkan kembali secara instan...')
+            container.connection.state = 'CONNECTING'
+            container.isInitializing = false
+            setImmediate(() => {
+              this.initialize().catch(console.error)
+            })
+            return
+          }
+
           if (isLoggedOut) {
             console.warn('[Baileys] WhatsApp ter-logout oleh HP. Menghapus sesi lama agar bisa scan QR baru.')
             container.connection.state = 'DISCONNECTED'
@@ -186,12 +205,12 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
             container.connection.phoneConnected = null
             clearSessionDir(sessionDir)
           } else {
-            // Reconnect otomatis setelah beberapa detik jika bukan logout
+            // Reconnect otomatis setelah beberapa detik jika putus jaringan biasa
             container.connection.state = 'CONNECTING'
             setTimeout(() => {
               container.isInitializing = false
               this.initialize().catch(console.error)
-            }, 3000)
+            }, 2500)
           }
         }
       })
@@ -203,6 +222,35 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       container.connection.lastError = err?.message || 'Inisialisasi gagal'
     } finally {
       container.isInitializing = false
+    }
+  }
+
+  async requestPairingCode(phoneNumber: string): Promise<string> {
+    if (!container.connection.sock) {
+      await this.initialize()
+      // Tunggu socket siap
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+
+    if (!container.connection.sock) {
+      throw new Error('Socket WhatsApp belum siap. Coba beberapa saat lagi.')
+    }
+
+    const cleanPhone = normalizePhone(phoneNumber)
+    if (!cleanPhone || cleanPhone.length < 10) {
+      throw new Error('Nomor telepon tidak valid. Gunakan format contoh: 08123456789 atau 628123456789.')
+    }
+
+    try {
+      const code = await container.connection.sock.requestPairingCode(cleanPhone)
+      // Format 8 karakter jadi XXXX-XXXX agar mudah dibaca
+      if (typeof code === 'string' && code.length === 8) {
+        return `${code.slice(0, 4)}-${code.slice(4)}`
+      }
+      return code
+    } catch (err: any) {
+      console.error('[Baileys Pairing Code Error]', err)
+      throw new Error(err?.message || 'Gagal meminta kode pairing dari WhatsApp.')
     }
   }
 
