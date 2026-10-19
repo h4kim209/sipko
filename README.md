@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SIPKO — Sistem Peminjaman Kendaraan Operasional
+## SMKN 1 Subang
 
-## Getting Started
+Aplikasi web manajemen peminjaman kendaraan operasional sekolah secara digital.  
+Domain target: **sipko.smkn1subang.sch.id**
 
-First, run the development server:
+---
 
+## 🛠️ Stack Teknologi
+
+| Komponen | Teknologi |
+|----------|-----------|
+| Framework | Next.js 16 (App Router) + TypeScript |
+| Database | PostgreSQL 14+ |
+| ORM | Prisma 6 |
+| Auth | NextAuth v5 (JWT session) |
+| Antrian | BullMQ + Redis |
+| WhatsApp | @whiskeysockets/baileys |
+| Peta | OpenStreetMap (Nominatim + OSRM) |
+| CSS | Vanilla CSS (design system custom) |
+
+---
+
+## 🚀 Setup Development Lokal
+
+### 1. Prasyarat
+- Node.js >= 20
+- PostgreSQL 14+ (berjalan lokal)
+- Redis (opsional — untuk antrian BullMQ)
+
+### 2. Clone & Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repo>
+cd sipko
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Konfigurasi Environment
+Salin `.env.example` ke `.env.local` lalu isi:
+```bash
+cp .env.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Minimal yang **wajib** diisi:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/sipko_db"
+NEXTAUTH_SECRET="buat-string-acak-minimal-32-karakter"
+UPLOAD_DIR="D:/sipko-uploads"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Buat Database & Jalankan Migrasi
+```bash
+createdb sipko_db
+npm run db:migrate
+npm run db:seed
+```
 
-## Learn More
+**Akun default setelah seed:**
 
-To learn more about Next.js, take a look at the following resources:
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | admin@smkn1subang.sch.id | sipko@2024! |
+| Approver (Kepsek) | kepsek@smkn1subang.sch.id | kepsek@2024! |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 5. Jalankan Dev Server
+```bash
+npm run dev
+# Buka http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🔄 Alur Peminjaman Kendaraan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+Pemohon mengisi form
+         ↓
+  MENUNGGU_PERSETUJUAN
+         ↓ Admin/Approver menyetujui
+      DISETUJUI
+         ↓ (otomatis)
+ MENUNGGU_PEMERIKSAAN_AWAL
+         ↓ Pemohon upload foto + odometer awal
+    SIAP_BERANGKAT
+         ↓ Pemohon tekan "Mulai Perjalanan"
+   SEDANG_DIGUNAKAN
+         ↓ Pemohon upload foto + odometer akhir
+MENUNGGU_PEMERIKSAAN_PENGEMBALIAN
+         ↓ Admin review bukti
+       SELESAI  (atau PERLU_PERBAIKAN_BUKTI)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📱 Integrasi WhatsApp (Baileys)
+
+1. Set `WA_SESSION_DIR` di `.env.local`
+2. Jalankan server
+3. Buka `/api/whatsapp/qr` sebagai Super Admin
+4. Scan QR code dengan HP pengirim WhatsApp
+5. Setelah terhubung, sesi tersimpan otomatis
+
+---
+
+## 🚀 Deployment Produksi
+
+```bash
+# Build
+npm run build
+
+# PM2
+pm2 start npm --name sipko -- start
+
+# Nginx (reverse proxy ke port 3000)
+# SSL via certbot --nginx -d sipko.smkn1subang.sch.id
+
+# Migrasi produksi
+npm run db:deploy
+npm run db:seed
+```
+
+---
+
+## 📋 Perintah Berguna
+
+```bash
+npm run dev          # Dev server
+npm run build        # Build produksi
+npm run typecheck    # Cek TypeScript
+npm run db:migrate   # Buat migrasi (dev)
+npm run db:deploy    # Terapkan migrasi (produksi)
+npm run db:seed      # Isi data awal
+npm run db:studio    # Prisma Studio (GUI database)
+```

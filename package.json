@@ -4,14 +4,45 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.3",
+    "@prisma/client": "6.19.3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^8.0.2",
+    "@types/qrcode": "^1.5.6",
+    "@types/uuid": "^10.0.0",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "bcryptjs": "^3.0.3",
+    "bullmq": "^6.3.17",
+    "date-fns": "^4.4.0",
+    "ioredis": "^6.0.0",
+    "jspdf": "^4.2.1",
     "next": "16.4.2",
+    "next-auth": "^5.0.0-beta.32",
+    "nodemailer": "^8.0.11",
+    "pino": "^10.4.0",
+    "prisma": "6.19.3",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "sharp": "^0.35.5",
+    "uuid": "^14.0.3",
+    "xlsx": "^0.18.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -19,6 +50,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "tsx": "4.23.15",
     "typescript": "^5"
   }
 }

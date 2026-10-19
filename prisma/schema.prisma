@@ -1,0 +1,401 @@
+// SIPKO - Prisma Schema
+// Database: MySQL / MariaDB (via XAMPP)
+// Versi schema: 1.1.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  PEMOHON
+  ADMIN
+  APPROVER
+  SUPER_ADMIN
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+}
+
+enum BookingStatus {
+  MENUNGGU_PERSETUJUAN
+  DISETUJUI
+  DITOLAK
+  MENUNGGU_PEMERIKSAAN_AWAL
+  SIAP_BERANGKAT
+  SEDANG_DIGUNAKAN
+  MENUNGGU_PEMERIKSAAN_PENGEMBALIAN
+  PERLU_PERBAIKAN_BUKTI
+  SELESAI
+  DIBATALKAN
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+}
+
+enum InspectionType {
+  PRE
+  POST
+}
+
+enum InspectionReviewAction {
+  APPROVED
+  NEEDS_REVISION
+}
+
+enum PhotoCategory {
+  SPEEDOMETER_PRE
+  SPEEDOMETER_POST
+  INTERIOR_FRONT_PRE
+  INTERIOR_FRONT_POST
+  SEAT_REAR_PRE
+  SEAT_REAR_POST
+  EXTERIOR_PRE
+  EXTERIOR_POST
+  FUEL_RECEIPT
+  OTHER
+}
+
+enum NotificationEvent {
+  BOOKING_CREATED_APPLICANT
+  BOOKING_CREATED_ADMIN
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  REMINDER_DEPARTURE
+  REMINDER_RETURN
+  OVERDUE_WARNING
+  RETURN_EVIDENCE_RECEIVED
+  BOOKING_COMPLETED
+  REVISION_NEEDED
+  NOTIFICATION_FAILED_ALERT
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum MapProvider {
+  OSM
+  GOOGLE
+}
+
+// ============================================================
+// USERS
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String    @db.VarChar(255)
+  nip           String?   @unique @db.VarChar(50)
+  jabatan       String?   @db.VarChar(255)
+  unit          String?   @db.VarChar(255)
+  phoneWa       String?   @db.VarChar(20)
+  email         String?   @unique @db.VarChar(255)
+  passwordHash  String?   @db.VarChar(255)
+  role          Role      @default(PEMOHON)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  bookings            Booking[]             @relation("BookingApplicantUser")
+  approvals           BookingApproval[]
+  statusHistories     BookingStatusHistory[]
+  preInspections      VehicleInspection[]   @relation("InspectionSubmitter")
+  reviewedInspections VehicleInspection[]   @relation("InspectionReviewer")
+  uploadedPhotos      InspectionPhoto[]
+  maintenance         VehicleMaintenance[]  @relation("MaintenanceCreator")
+  updatedSettings     SystemSetting[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+// ============================================================
+// VEHICLES
+// ============================================================
+
+model Vehicle {
+  id              String        @id @default(cuid())
+  name            String        @db.VarChar(255)
+  brand           String?       @db.VarChar(100)
+  type            String?       @db.VarChar(100)
+  plateNumber     String        @unique @db.VarChar(20)
+  year            Int?
+  color           String?       @db.VarChar(50)
+  fuelType        String?       @db.VarChar(50)
+  seatCapacity    Int?
+  status          VehicleStatus @default(AVAILABLE)
+  currentOdometer Int?          @default(0)
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  bookings    Booking[]
+  maintenance VehicleMaintenance[]
+
+  @@map("vehicles")
+}
+
+// ============================================================
+// BOOKINGS
+// ============================================================
+
+model Booking {
+  id                  String        @id @default(cuid())
+  bookingCode         String        @unique @db.VarChar(20)
+  // Identitas pemohon (disimpan snapshot saat pengajuan)
+  applicantName       String        @db.VarChar(255)
+  applicantNip        String?       @db.VarChar(50)
+  applicantJabatan    String        @db.VarChar(255)
+  applicantUnit       String?       @db.VarChar(255)
+  applicantPhoneWa    String        @db.VarChar(20)
+  // Relasi ke akun jika pemohon punya akun
+  userId              String?
+  user                User?         @relation("BookingApplicantUser", fields: [userId], references: [id])
+  // Kendaraan
+  vehicleId           String
+  vehicle             Vehicle       @relation(fields: [vehicleId], references: [id])
+  // Tujuan & Rute
+  purposeCategory     String        @db.VarChar(100)
+  purposeNotes        String?       @db.Text
+  originAddress       String        @db.Text
+  originLat           Float?
+  originLng           Float?
+  destinationName     String        @db.VarChar(255)
+  destinationAddress  String        @db.Text
+  destinationLat      Float?
+  destinationLng      Float?
+  routeDistanceKm     Float?
+  mapProvider         MapProvider?
+  routeFetchedAt      DateTime?
+  extraStops          Json?         // Array of {name, address, lat, lng}
+  // Jadwal
+  departureDatetime   DateTime
+  returnDatetime      DateTime
+  actualDepartureAt   DateTime?
+  actualReturnAt      DateTime?
+  // Status
+  status              BookingStatus @default(MENUNGGU_PERSETUJUAN)
+  isOverdue           Boolean       @default(false)
+  // Catatan
+  additionalNotes     String?       @db.Text
+  approvalNotes       String?       @db.Text
+  // Timestamps
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  deletedAt           DateTime?
+
+  // Relations
+  approvals     BookingApproval[]
+  statusHistory BookingStatusHistory[]
+  inspections   VehicleInspection[]
+  notifications Notification[]
+
+  @@index([vehicleId, status, departureDatetime, returnDatetime])
+  @@index([bookingCode])
+  @@map("bookings")
+}
+
+// ============================================================
+// BOOKING APPROVALS
+// ============================================================
+
+model BookingApproval {
+  id          String         @id @default(cuid())
+  bookingId   String
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  approverId  String
+  approver    User           @relation(fields: [approverId], references: [id])
+  action      ApprovalAction
+  reason      String?        @db.Text
+  createdAt   DateTime       @default(now())
+
+  @@map("booking_approvals")
+}
+
+// ============================================================
+// BOOKING STATUS HISTORY
+// ============================================================
+
+model BookingStatusHistory {
+  id          String         @id @default(cuid())
+  bookingId   String
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  actorId     String?
+  actor       User?          @relation(fields: [actorId], references: [id])
+  actorName   String         @db.VarChar(255)
+  actorRole   String?        @db.VarChar(50)
+  fromStatus  BookingStatus?
+  toStatus    BookingStatus
+  reason      String?        @db.Text
+  notes       String?        @db.Text
+  createdAt   DateTime       @default(now())
+
+  @@index([bookingId])
+  @@map("booking_status_history")
+}
+
+// ============================================================
+// VEHICLE INSPECTIONS
+// ============================================================
+
+model VehicleInspection {
+  id              String                  @id @default(cuid())
+  bookingId       String
+  booking         Booking                 @relation(fields: [bookingId], references: [id])
+  type            InspectionType
+  odometer        Int?
+  fuelFilled      Boolean?
+  fuelNotes       String?                 @db.Text
+  incidentNotes   String?                 @db.Text
+  existingDamage  String?                 @db.Text
+  submittedById   String?
+  submittedBy     User?                   @relation("InspectionSubmitter", fields: [submittedById], references: [id])
+  submittedAt     DateTime                @default(now())
+  reviewedById    String?
+  reviewedBy      User?                   @relation("InspectionReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  reviewNotes     String?                 @db.Text
+  reviewAction    InspectionReviewAction?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  photos InspectionPhoto[]
+
+  @@unique([bookingId, type])
+  @@map("vehicle_inspections")
+}
+
+// ============================================================
+// INSPECTION PHOTOS
+// ============================================================
+
+model InspectionPhoto {
+  id           String            @id @default(cuid())
+  inspectionId String
+  inspection   VehicleInspection @relation(fields: [inspectionId], references: [id])
+  category     PhotoCategory
+  filePath     String            @db.VarChar(500)
+  fileSize     Int
+  mimeType     String            @db.VarChar(100)
+  uploadedById String?
+  uploadedBy   User?             @relation(fields: [uploadedById], references: [id])
+  uploadedAt   DateTime          @default(now())
+  isSuperseded Boolean           @default(false)
+  supersedesId String?
+  supersedes   InspectionPhoto?  @relation("PhotoCorrection", fields: [supersedesId], references: [id])
+  correctedBy  InspectionPhoto[] @relation("PhotoCorrection")
+  createdAt    DateTime          @default(now())
+
+  @@index([inspectionId, category])
+  @@map("inspection_photos")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id                String             @id @default(cuid())
+  bookingId         String?
+  booking           Booking?           @relation(fields: [bookingId], references: [id])
+  recipientPhone    String             @db.VarChar(20)
+  eventType         NotificationEvent
+  messageBody       String             @db.Text
+  status            NotificationStatus @default(QUEUED)
+  providerMessageId String?            @db.VarChar(255)
+  attemptCount      Int                @default(0)
+  lastAttemptAt     DateTime?
+  errorMessage      String?            @db.Text
+  scheduledFor      DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status, scheduledFor])
+  @@map("notifications")
+}
+
+// ============================================================
+// VEHICLE MAINTENANCE
+// ============================================================
+
+model VehicleMaintenance {
+  id          String    @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  type        String    @db.VarChar(100)
+  description String    @db.Text
+  scheduledAt DateTime?
+  completedAt DateTime?
+  odometerAt  Int?
+  cost        Float?
+  notes       String?   @db.Text
+  createdById String
+  createdBy   User      @relation("MaintenanceCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("vehicle_maintenance")
+}
+
+// ============================================================
+// SYSTEM SETTINGS
+// ============================================================
+
+model SystemSetting {
+  id          String    @id @default(cuid())
+  key         String    @unique @db.VarChar(100)
+  value       String    @db.Text
+  description String?   @db.Text
+  isPublic    Boolean   @default(false)
+  updatedById String?
+  updatedBy   User?     @relation(fields: [updatedById], references: [id])
+  updatedAt   DateTime  @updatedAt
+
+  @@map("system_settings")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorId    String?
+  actor      User?     @relation(fields: [actorId], references: [id])
+  actorName  String?   @db.VarChar(255)
+  actorRole  String?   @db.VarChar(50)
+  action     String    @db.VarChar(100)
+  entityType String    @db.VarChar(50)
+  entityId   String?   @db.VarChar(50)
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?   @db.VarChar(45)
+  userAgent  String?   @db.Text
+  createdAt  DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
