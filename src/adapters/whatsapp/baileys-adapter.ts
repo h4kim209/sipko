@@ -49,6 +49,11 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
     }
 
     try {
+      const fs = await import('fs')
+      if (!fs.existsSync(sessionDir)) {
+        fs.mkdirSync(sessionDir, { recursive: true })
+      }
+
       // Lazy import Baileys (tidak crash saat module tidak tersedia)
       const {
         default: makeWASocket,
@@ -58,12 +63,20 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       } = await import('@whiskeysockets/baileys')
 
       const { state, saveCreds } = await useMultiFileAuthState(sessionDir)
-      const { version } = await fetchLatestBaileysVersion()
+
+      let version = undefined
+      try {
+        const v = await fetchLatestBaileysVersion()
+        version = v.version
+      } catch (verErr) {
+        console.warn('[Baileys] Menggunakan versi default:', verErr)
+      }
 
       const sock = makeWASocket({
         version,
         auth: state,
         logger: pino({ level: process.env.WA_LOG_LEVEL || 'warn' }) as any,
+        printQRInTerminal: false,
       })
 
       connection.sock = sock
@@ -75,13 +88,13 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         if (qr) {
           connection.qr = qr
           connection.state = 'QR_PENDING'
-          console.log('[Baileys] QR Code tersedia. Buka /api/whatsapp/qr untuk scan.')
+          console.log('[Baileys] QR Code tersedia. Buka /admin/whatsapp untuk scan.')
         }
 
         if (conn === 'open') {
           connection.state = 'CONNECTED'
           connection.qr = null
-          console.log('[Baileys] WhatsApp terhubung.')
+          console.log('[Baileys] WhatsApp terhubung!')
         }
 
         if (conn === 'close') {
@@ -101,8 +114,23 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       sock.ev.on('creds.update', saveCreds)
     } catch (err) {
       console.error('[Baileys] Gagal inisialisasi:', err)
+      this.initialized = false
       connection.state = 'DISCONNECTED'
     }
+  }
+
+  async reconnect(): Promise<void> {
+    try {
+      if (connection.sock) {
+        try {
+          connection.sock.end(new Error('Manual reconnect'))
+        } catch {}
+      }
+    } catch {}
+    this.initialized = false
+    connection.state = 'CONNECTING'
+    connection.qr = null
+    await this.initialize()
   }
 
   isReady(): boolean {
