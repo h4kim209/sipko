@@ -5,28 +5,30 @@ import type { WhatsAppAdapter } from './types'
 import { DevWhatsAppAdapter } from './dev-adapter'
 import { getBaileysAdapter } from './baileys-adapter'
 
-let _adapter: WhatsAppAdapter | null = null
+const globalForWa = globalThis as unknown as {
+  __waAdapter?: WhatsAppAdapter | null
+}
 
 export function getWhatsAppAdapter(): WhatsAppAdapter {
-  if (_adapter) return _adapter
+  if (globalForWa.__waAdapter) return globalForWa.__waAdapter
 
   const sessionDir = process.env.WA_SESSION_DIR
   const isDev = process.env.NODE_ENV === 'development'
 
   if (!sessionDir) {
     console.warn('[WhatsApp] WA_SESSION_DIR tidak diset. Menggunakan DevAdapter (log only).')
-    _adapter = new DevWhatsAppAdapter()
-    return _adapter
+    globalForWa.__waAdapter = new DevWhatsAppAdapter()
+    return globalForWa.__waAdapter
   }
 
   if (isDev && process.env.WA_FORCE_DEV === 'true') {
     console.warn('[WhatsApp] WA_FORCE_DEV=true. Menggunakan DevAdapter.')
-    _adapter = new DevWhatsAppAdapter()
-    return _adapter
+    globalForWa.__waAdapter = new DevWhatsAppAdapter()
+    return globalForWa.__waAdapter
   }
 
-  _adapter = getBaileysAdapter()
-  return _adapter
+  globalForWa.__waAdapter = getBaileysAdapter()
+  return globalForWa.__waAdapter
 }
 
 // Template pesan WhatsApp dalam Bahasa Indonesia formal
