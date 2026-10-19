@@ -15,6 +15,7 @@ const MENU_ITEMS = [
   { label: 'Pemeriksaan Pengembalian', href: '/admin/pemeriksaan-kembali', icon: '📋' },
   { section: 'MANAJEMEN' },
   { label: 'Data Kendaraan', href: '/admin/kendaraan', icon: '🚙' },
+  { label: 'Grafik KM Kendaraan', href: '/admin/odometer', icon: '📈' },
   { label: 'Riwayat Peminjaman', href: '/admin/riwayat', icon: '📁' },
   { label: 'Laporan & Cetak', href: '/admin/laporan', icon: '🖨️' },
   { section: 'SISTEM' },

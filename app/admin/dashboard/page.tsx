@@ -1,8 +1,7 @@
-// app/admin/dashboard/page.tsx — Dashboard Admin SIPKO (Server Component)
-
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { VehicleOdometerChart, type VehicleOdoData, type UsagePoint } from '@/components/admin/vehicle-odometer-chart'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -23,6 +22,7 @@ export default async function AdminDashboardPage() {
     totalCompleted,
     totalVehicles,
     recentBookings,
+    vehiclesWithHistory,
   ] = await Promise.all([
     // Pengajuan menunggu persetujuan
     prisma.booking.count({
