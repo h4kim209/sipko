@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { saveFile } from '@/lib/file-storage'
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit'
-import { getWhatsAppAdapter, WA_TEMPLATES } from '@/adapters/whatsapp'
+import { getWhatsAppAdapter, WA_TEMPLATES, getApproverPhoneNumbers } from '@/adapters/whatsapp'
 
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE_MB || '10') * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -247,10 +247,10 @@ export async function POST(request: NextRequest) {
         })
 
         const wa = getWhatsAppAdapter()
-        const adminNumbers = (process.env.WA_ADMIN_NUMBERS || '').split(',').filter(Boolean)
+        const approvers = await getApproverPhoneNumbers()
         const appUrl = process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'
 
-        for (const adminPhone of adminNumbers) {
+        for (const approver of approvers) {
           const msg = WA_TEMPLATES.returnEvidenceReceived({
             nama: booking.applicantName,
             kode_booking: booking.bookingCode,
@@ -260,25 +260,25 @@ export async function POST(request: NextRequest) {
             km_aktual: preInspection?.odometer
               ? (odometer - preInspection.odometer).toString()
               : '-',
-            app_url: appUrl,
+            app_url: `${appUrl}/admin/pemeriksaan-kembali`,
           })
 
           await prisma.notification.create({
             data: {
               bookingId: booking.id,
-              recipientPhone: adminPhone.trim(),
+              recipientPhone: approver.phone,
               eventType: 'RETURN_EVIDENCE_RECEIVED',
               messageBody: msg,
               status: 'QUEUED',
             },
           })
 
-          const result = await wa.sendMessage(adminPhone.trim(), msg)
+          const result = await wa.sendMessage(approver.phone, msg)
           await prisma.notification.updateMany({
             where: {
               bookingId: booking.id,
               eventType: 'RETURN_EVIDENCE_RECEIVED',
-              recipientPhone: adminPhone.trim(),
+              recipientPhone: approver.phone,
             },
             data: {
               status: result.success ? 'SENT' : 'FAILED',

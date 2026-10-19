@@ -7,7 +7,7 @@ import { Prisma } from '@prisma/client'
 import { generateBookingCode } from '@/lib/booking-code'
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit'
 import { CreateBookingSchema } from '@/lib/validators/booking'
-import { getWhatsAppAdapter, WA_TEMPLATES } from '@/adapters/whatsapp'
+import { getWhatsAppAdapter, WA_TEMPLATES, getApproverPhoneNumbers } from '@/adapters/whatsapp'
 
 export async function POST(request: NextRequest) {
   try {
@@ -202,36 +202,38 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Kirim juga ke admin
-      const adminNumbers = (process.env.WA_ADMIN_NUMBERS || '').split(',').filter(Boolean)
-      for (const adminPhone of adminNumbers) {
+      // Kirim juga ke Kepala Sekolah (APPROVER) dan Pengelola SIPKO
+      const approvers = await getApproverPhoneNumbers()
+      for (const approver of approvers) {
         const adminMsg = WA_TEMPLATES.bookingCreatedAdmin({
+          nama_petugas: approver.name,
           nama_pemohon: data.applicantName,
           nip: data.applicantNip || '-',
           jabatan: data.applicantJabatan,
+          kendaraan: vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : undefined,
           waktu_pinjam: formatWaDate(data.departureDatetime),
           waktu_kembali: formatWaDate(data.returnDatetime),
           tujuan: data.destinationName,
           kode_booking: bookingCode,
-          app_url: appUrl,
+          app_url: `${appUrl}/admin/pengajuan`,
         })
 
         await prisma.notification.create({
           data: {
             bookingId: booking.id,
-            recipientPhone: adminPhone.trim(),
+            recipientPhone: approver.phone,
             eventType: 'BOOKING_CREATED_ADMIN',
             messageBody: adminMsg,
             status: 'QUEUED',
           },
         })
 
-        const adminResult = await wa.sendMessage(adminPhone.trim(), adminMsg)
+        const adminResult = await wa.sendMessage(approver.phone, adminMsg)
         await prisma.notification.updateMany({
           where: {
             bookingId: booking.id,
             eventType: 'BOOKING_CREATED_ADMIN',
-            recipientPhone: adminPhone.trim(),
+            recipientPhone: approver.phone,
           },
           data: {
             status: adminResult.success ? 'SENT' : 'FAILED',
