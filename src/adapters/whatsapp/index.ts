@@ -31,6 +31,61 @@ export function getWhatsAppAdapter(): WhatsAppAdapter {
   return globalForWa.__waAdapter
 }
 
+import { prisma } from '@/lib/prisma'
+
+export interface ApproverRecipient {
+  phone: string
+  name: string
+  role: string
+}
+
+/** Mengambil seluruh nomor WhatsApp pejabat penyetuju (Kepsek/Wakasek/Admin) yang aktif dari DB dan konfigurasi */
+export async function getApproverPhoneNumbers(): Promise<ApproverRecipient[]> {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        role: { in: ['APPROVER', 'ADMIN', 'SUPER_ADMIN'] },
+        isActive: true,
+        deletedAt: null,
+        phoneWa: { not: null },
+      },
+      select: {
+        phoneWa: true,
+        name: true,
+        role: true,
+      },
+    })
+
+    const results: ApproverRecipient[] = []
+    const seenPhones = new Set<string>()
+
+    for (const u of users) {
+      if (u.phoneWa && u.phoneWa.trim()) {
+        const clean = u.phoneWa.trim()
+        if (!seenPhones.has(clean)) {
+          seenPhones.add(clean)
+          results.push({ phone: clean, name: u.name, role: u.role })
+        }
+      }
+    }
+
+    // Tambahkan nomor fallback dari environment WA_ADMIN_NUMBERS bila ada
+    const envNumbers = (process.env.WA_ADMIN_NUMBERS || '').split(',').filter(Boolean)
+    for (const raw of envNumbers) {
+      const clean = raw.trim()
+      if (clean && !seenPhones.has(clean)) {
+        seenPhones.add(clean)
+        results.push({ phone: clean, name: 'Pengelola SIPKO', role: 'ADMIN' })
+      }
+    }
+
+    return results
+  } catch (err) {
+    console.error('[Get Approver Phones Error]', err)
+    return []
+  }
+}
+
 // Template pesan WhatsApp dalam Bahasa Indonesia formal
 export const WA_TEMPLATES = {
   bookingCreatedApplicant: (data: {
@@ -58,25 +113,32 @@ Silakan cek status melalui ${data.app_url}
 SIPKO | SMKN 1 Subang`,
 
   bookingCreatedAdmin: (data: {
+    nama_petugas?: string
     nama_pemohon: string
     nip: string
     jabatan: string
+    kendaraan?: string
     waktu_pinjam: string
     waktu_kembali: string
     tujuan: string
     kode_booking: string
     app_url: string
-  }) => `SIPKO — Pengajuan Peminjaman Baru
+  }) => `SIPKO — Pengajuan Peminjaman Baru 📋
+
+${data.nama_petugas ? `Yth. Bapak/Ibu ${data.nama_petugas},\n` : ''}Terdapat permohonan peminjaman kendaraan baru yang memerlukan persetujuan:
 
 👤 Pemohon: ${data.nama_pemohon}
 🪪 NIP: ${data.nip || '-'}
-💼 Jabatan: ${data.jabatan}
+💼 Jabatan: ${data.jabatan}${data.kendaraan ? `\n🚙 Kendaraan: ${data.kendaraan}` : ''}
 📅 Berangkat: ${data.waktu_pinjam}
 📅 Kembali: ${data.waktu_kembali}
 📍 Tujuan: ${data.tujuan}
 🔖 Kode Booking: ${data.kode_booking}
 
-Silakan periksa dashboard: ${data.app_url}`,
+Silakan buka dashboard untuk memberikan persetujuan:
+${data.app_url}
+
+SIPKO | SMKN 1 Subang`,
 
   bookingApproved: (data: {
     nama: string
