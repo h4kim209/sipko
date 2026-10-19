@@ -296,13 +296,8 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Grafik Pertambahan KM Kendaraan */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <VehicleOdometerChart vehicles={chartData} />
-      </div>
-
       {/* Recent Bookings Table */}
-      <div className="card">
+      <div className="card" style={{ marginBottom: 'var(--space-8)' }}>
         <div className="card-header">
           <h3>📋 Booking Terbaru</h3>
           <Link href="/admin/riwayat" className="btn btn-secondary btn-sm">
@@ -361,6 +356,9 @@ export default async function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Grafik Pertambahan KM Kendaraan (Paling Bawah) */}
+      <VehicleOdometerChart vehicles={chartData} />
     </div>
   )
 }
