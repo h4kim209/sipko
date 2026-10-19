@@ -396,17 +396,42 @@ export default function CekBookingPage() {
               </div>
             )}
 
+            {/* Status Informative Cards */}
+            {booking.status === 'MENUNGGU_PERSETUJUAN' && (
+              <div className="card">
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⏳</div>
+                  <h3 style={{ marginBottom: '0.5rem' }}>Menunggu Persetujuan</h3>
+                  <p style={{ color: 'var(--color-gray-500)', fontSize: '0.875rem', maxWidth: '460px', margin: '0 auto' }}>
+                    Pengajuan peminjaman Anda sedang ditinjau oleh pihak berwenang (Kepala Sekolah / Admin). Anda akan menerima notifikasi WhatsApp setelah pengajuan disetujui atau ditolak.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {booking.status === 'DITOLAK' && (
+              <div className="card" style={{ borderColor: 'var(--color-danger)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>❌</div>
+                  <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-danger)' }}>Pengajuan Belum Disetujui</h3>
+                  <p style={{ color: 'var(--color-gray-500)', fontSize: '0.875rem', maxWidth: '460px', margin: '0 auto' }}>
+                    Mohon maaf, pengajuan peminjaman kendaraan belum dapat disetujui. Silakan hubungi admin sekolah jika memerlukan informasi lebih lanjut.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Tombol Upload Bukti Awal */}
             {booking.canSubmitPreInspection && !showPreInspection && (
-              <div className="card">
-                <div className="card-body" style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📸</div>
-                  <h3 style={{ marginBottom: '0.5rem' }}>Lengkapi Bukti Pemeriksaan Awal</h3>
-                  <p style={{ color: 'var(--color-gray-500)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                    Unggah foto speedometer dan kondisi kendaraan sebelum berangkat.
+              <div className="card" style={{ borderColor: 'var(--color-primary-400)', background: 'linear-gradient(to bottom, #f0fdfa, #ffffff)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📸</div>
+                  <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-primary-800)' }}>Peminjaman Telah Disetujui!</h3>
+                  <p style={{ color: 'var(--color-gray-600)', marginBottom: '1.5rem', fontSize: '0.875rem', maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+                    Sebelum memulai perjalanan, silakan lengkapi pemeriksaan awal kendaraan dengan mencatat kilometer (odometer) awal dan mengunggah foto kondisi kebersihan kendaraan.
                   </p>
-                  <button className="btn btn-primary" onClick={() => setShowPreInspection(true)}>
-                    📷 Unggah Bukti Awal
+                  <button className="btn btn-primary btn-lg" onClick={() => setShowPreInspection(true)}>
+                    📷 Lengkapi & Unggah Bukti Awal
                   </button>
                 </div>
               </div>
@@ -426,13 +451,13 @@ export default function CekBookingPage() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Foto Speedometer Awal <span className="required">*</span></label>
-                    <input type="file" accept="image/jpeg,image/png" onChange={(e) => setPreSpeedoPhoto(e.target.files?.[0] || null)} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPreSpeedoPhoto(e.target.files?.[0] || null)} />
                     <span className="form-hint">Pastikan angka odometer terbaca jelas</span>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Foto Kondisi Kendaraan (min. 3) <span className="required">*</span></label>
-                    <input type="file" accept="image/jpeg,image/png" multiple onChange={(e) => setPrePhotos(Array.from(e.target.files || []))} />
-                    <span className="form-hint">Rekomendasikan: interior/dashboard, jok belakang, eksterior/bagasi</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => setPrePhotos(Array.from(e.target.files || []))} />
+                    <span className="form-hint">Rekomendasikan: interior/dashboard, jok belakang, eksterior/kebersihan</span>
                     <span className="form-hint" style={{ marginTop: '4px' }}>Terpilih: {prePhotos.length} foto</span>
                   </div>
                   <div className="form-group">
@@ -448,12 +473,12 @@ export default function CekBookingPage() {
 
             {/* Tombol Mulai Perjalanan */}
             {booking.canStartTrip && (
-              <div className="card">
-                <div className="card-body" style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🚗</div>
-                  <h3 style={{ marginBottom: '0.5rem' }}>Siap Berangkat!</h3>
-                  <p style={{ color: 'var(--color-gray-500)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                    Pemeriksaan awal telah selesai. Tekan tombol di bawah untuk memulai perjalanan.
+              <div className="card" style={{ borderColor: 'var(--color-primary-500)', background: 'linear-gradient(to bottom, #ecfdf5, #ffffff)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🚗</div>
+                  <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-primary-800)' }}>Siap Berangkat!</h3>
+                  <p style={{ color: 'var(--color-gray-600)', marginBottom: '1.5rem', fontSize: '0.875rem', maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+                    Pemeriksaan awal telah dicatat. Tekan tombol di bawah untuk memulai perjalanan operasional Anda.
                   </p>
                   <button className={`btn btn-primary btn-lg${actionLoading ? ' btn-loading' : ''}`} onClick={handleStartTrip} disabled={actionLoading}>
                     {actionLoading ? 'Memproses...' : '🚗 Mulai Perjalanan'}
@@ -464,15 +489,15 @@ export default function CekBookingPage() {
 
             {/* Tombol Upload Bukti Akhir */}
             {booking.canSubmitPostInspection && !showPostInspection && (
-              <div className="card">
-                <div className="card-body" style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📸</div>
-                  <h3 style={{ marginBottom: '0.5rem' }}>Unggah Bukti Pengembalian</h3>
-                  <p style={{ color: 'var(--color-gray-500)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                    Unggah foto speedometer akhir, kondisi kendaraan, dan bukti BBM.
+              <div className="card" style={{ borderColor: 'var(--color-warning)', background: 'linear-gradient(to bottom, #fffbeb, #ffffff)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏁</div>
+                  <h3 style={{ marginBottom: '0.5rem' }}>Akhiri Perjalanan & Pengembalian</h3>
+                  <p style={{ color: 'var(--color-gray-600)', marginBottom: '1.5rem', fontSize: '0.875rem', maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+                    Perjalanan telah selesai? Unggah foto speedometer akhir, kondisi kebersihan kendaraan, dan bukti BBM untuk proses pengembalian.
                   </p>
-                  <button className="btn btn-primary" onClick={() => setShowPostInspection(true)}>
-                    📷 Unggah Bukti Akhir
+                  <button className="btn btn-primary btn-lg" onClick={() => setShowPostInspection(true)}>
+                    🏁 Akhiri Perjalanan & Unggah Bukti
                   </button>
                 </div>
               </div>
@@ -492,11 +517,11 @@ export default function CekBookingPage() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Foto Speedometer Akhir <span className="required">*</span></label>
-                    <input type="file" accept="image/jpeg,image/png" onChange={(e) => setPostSpeedoPhoto(e.target.files?.[0] || null)} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setPostSpeedoPhoto(e.target.files?.[0] || null)} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Foto Kondisi Kendaraan (min. 3) <span className="required">*</span></label>
-                    <input type="file" accept="image/jpeg,image/png" multiple onChange={(e) => setPostPhotos(Array.from(e.target.files || []))} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => setPostPhotos(Array.from(e.target.files || []))} />
                     <span className="form-hint">Sudut yang sama dengan foto awal: interior, jok belakang, eksterior</span>
                     <span className="form-hint" style={{ marginTop: '4px' }}>Terpilih: {postPhotos.length} foto</span>
                   </div>
@@ -518,7 +543,7 @@ export default function CekBookingPage() {
                   {fuelFilled === true && (
                     <div className="form-group">
                       <label className="form-label">Foto Bukti Pengisian BBM <span className="required">*</span></label>
-                      <input type="file" accept="image/jpeg,image/png" onChange={(e) => setFuelPhoto(e.target.files?.[0] || null)} />
+                      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFuelPhoto(e.target.files?.[0] || null)} />
                     </div>
                   )}
 
@@ -539,6 +564,32 @@ export default function CekBookingPage() {
                   <button className={`btn btn-primary w-full${actionLoading ? ' btn-loading' : ''}`} onClick={handlePostInspectionSubmit} disabled={actionLoading}>
                     {actionLoading ? 'Mengunggah...' : '✅ Kirim Bukti Pengembalian'}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Menunggu Pemeriksaan Pengembalian */}
+            {booking.status === 'MENUNGGU_PEMERIKSAAN_PENGEMBALIAN' && (
+              <div className="card" style={{ borderColor: 'var(--color-navy-200, #cbd5e1)', background: 'linear-gradient(to bottom, #f8fafc, #ffffff)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📋</div>
+                  <h3 style={{ marginBottom: '0.5rem' }}>Menunggu Pemeriksaan Pengembalian</h3>
+                  <p style={{ color: 'var(--color-gray-600)', fontSize: '0.875rem', maxWidth: '460px', margin: '0 auto' }}>
+                    Bukti pengembalian Anda telah terkirim! Admin sedang memeriksa kelengkapan bukti foto dan selisih kilometer untuk menyelesaikan peminjaman.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Selesai */}
+            {booking.status === 'SELESAI' && (
+              <div className="card" style={{ borderColor: 'var(--color-success)', background: 'linear-gradient(to bottom, #f0fdf4, #ffffff)' }}>
+                <div className="card-body" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎉</div>
+                  <h3 style={{ marginBottom: '0.5rem', color: 'var(--color-success)' }}>Peminjaman Selesai</h3>
+                  <p style={{ color: 'var(--color-gray-600)', fontSize: '0.875rem', maxWidth: '460px', margin: '0 auto' }}>
+                    Peminjaman kendaraan telah selesai dan telah diverifikasi oleh admin. Terima kasih telah menggunakan fasilitas kendaraan operasional sekolah dengan tertib.
+                  </p>
                 </div>
               </div>
             )}

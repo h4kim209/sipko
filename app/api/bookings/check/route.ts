@@ -79,13 +79,15 @@ export async function POST(request: NextRequest) {
     const sessionToken = randomUUID()
 
     // Tentukan aksi yang tersedia
-    const canSubmitPreInspection =
-      booking.status === 'MENUNGGU_PEMERIKSAAN_AWAL' &&
-      !booking.inspections.some((i) => i.type === 'PRE')
-
     const preInspection = booking.inspections.find((i) => i.type === 'PRE')
+
+    const canSubmitPreInspection =
+      ['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL'].includes(booking.status) &&
+      !preInspection
+
     const canStartTrip =
-      booking.status === 'SIAP_BERANGKAT'
+      booking.status === 'SIAP_BERANGKAT' ||
+      (['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL'].includes(booking.status) && !!preInspection)
 
     const canSubmitPostInspection =
       (booking.status === 'SEDANG_DIGUNAKAN' || booking.status === 'PERLU_PERBAIKAN_BUKTI') &&

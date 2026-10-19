@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.findFirst({
       where: {
         bookingCode: bookingCode.toUpperCase(),
-        status: 'SIAP_BERANGKAT',
+        status: { in: ['SIAP_BERANGKAT', 'DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL'] },
         deletedAt: null,
       },
     })
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         data: {
           bookingId: booking.id,
           actorName: booking.applicantName,
-          fromStatus: 'SIAP_BERANGKAT',
+          fromStatus: booking.status,
           toStatus: 'SEDANG_DIGUNAKAN',
           notes: 'Pemohon memulai perjalanan.',
         },
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       entityType: 'booking',
       entityId: booking.id,
       actorName: booking.applicantName,
-      oldValue: { status: 'SIAP_BERANGKAT' },
+      oldValue: { status: booking.status },
       newValue: { status: 'SEDANG_DIGUNAKAN' },
     })
 

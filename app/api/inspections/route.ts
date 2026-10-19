@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Validasi status
     if (inspectionType === 'PRE') {
-      if (booking.status !== 'MENUNGGU_PEMERIKSAAN_AWAL') {
+      if (!['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL'].includes(booking.status)) {
         return NextResponse.json(
           { error: 'Status booking tidak memungkinkan upload bukti awal.' },
           { status: 400 }
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
           data: {
             bookingId: booking.id,
             actorName: booking.applicantName,
-            fromStatus: 'MENUNGGU_PEMERIKSAAN_AWAL',
+            fromStatus: booking.status,
             toStatus: 'SIAP_BERANGKAT',
             notes: 'Bukti pemeriksaan awal diunggah.',
           },
