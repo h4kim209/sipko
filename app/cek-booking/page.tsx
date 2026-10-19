@@ -86,8 +86,10 @@ export default function CekBookingPage() {
   const [fuelPhoto, setFuelPhoto] = useState<File | null>(null)
 
   const handleCheck = async (overrideCode?: string, overridePhone?: string) => {
-    const code = (overrideCode ?? bookingCode).trim().toUpperCase()
-    const phone = (overridePhone ?? phoneWa).trim()
+    const rawCode = typeof overrideCode === 'string' ? overrideCode : bookingCode
+    const rawPhone = typeof overridePhone === 'string' ? overridePhone : phoneWa
+    const code = (rawCode || '').trim().toUpperCase()
+    const phone = (rawPhone || '').trim()
 
     if (!code || !phone) {
       setError('Masukkan kode booking dan nomor WhatsApp.')
