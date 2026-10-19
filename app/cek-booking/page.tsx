@@ -330,7 +330,7 @@ export default function CekBookingPage() {
               <div className="nav-logo-subtitle">SMKN 1 Subang</div>
             </div>
           </Link>
-          <Link href="/" className="btn btn-secondary btn-sm">← Beranda</Link>
+          <Link href="/" onClick={handleGoHome} className="btn btn-secondary btn-sm">← Beranda</Link>
         </div>
       </nav>
 
@@ -652,10 +652,12 @@ export default function CekBookingPage() {
 
             {/* Kembali */}
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button className="btn btn-secondary" onClick={() => { setBooking(null); setBookingCode(''); setPhoneWa('') }}>
+              <button className="btn btn-secondary" onClick={handleReset}>
                 🔍 Cek Booking Lain
               </button>
-              <Link href="/" className="btn btn-secondary">← Beranda</Link>
+              <Link href="/" onClick={handleGoHome} className="btn btn-secondary">
+                ← Beranda
+              </Link>
             </div>
           </div>
         )}
