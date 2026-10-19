@@ -1,7 +1,7 @@
 'use client'
 // app/cek-booking/page.tsx — Halaman Cek Kode Booking (Publik)
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 type BookingInfo = {
@@ -85,38 +85,94 @@ export default function CekBookingPage() {
   const [fuelNotes, setFuelNotes] = useState('')
   const [fuelPhoto, setFuelPhoto] = useState<File | null>(null)
 
-  const handleCheck = async () => {
-    if (!bookingCode.trim() || !phoneWa.trim()) {
+  const handleCheck = async (overrideCode?: string, overridePhone?: string) => {
+    const code = (overrideCode ?? bookingCode).trim().toUpperCase()
+    const phone = (overridePhone ?? phoneWa).trim()
+
+    if (!code || !phone) {
       setError('Masukkan kode booking dan nomor WhatsApp.')
       return
     }
-    if (attempts >= 10) {
+    if (attempts >= 15) {
       setError('Terlalu banyak percobaan. Silakan coba lagi nanti.')
       return
     }
     setLoading(true)
     setError('')
-    setBooking(null)
     try {
       const res = await fetch('/api/bookings/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bookingCode: bookingCode.trim().toUpperCase(),
-          phoneWa: phoneWa.trim(),
+          bookingCode: code,
+          phoneWa: phone,
         }),
       })
       const data = await res.json()
       setAttempts((a) => a + 1)
       if (!res.ok) {
         setError(data.error || 'Kode booking tidak ditemukan atau nomor WhatsApp tidak cocok.')
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('sipko_active_booking')
+        }
         return
       }
       setBooking(data.booking)
+      setBookingCode(code)
+      setPhoneWa(phone)
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          'sipko_active_booking',
+          JSON.stringify({ bookingCode: code, phoneWa: phone })
+        )
+      }
     } catch {
       setError('Gagal memeriksa. Periksa koneksi internet Anda.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Restore status booking saat halaman direfresh
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = sessionStorage.getItem('sipko_active_booking')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.bookingCode && parsed.phoneWa) {
+          setBookingCode(parsed.bookingCode)
+          setPhoneWa(parsed.phoneWa)
+          handleCheck(parsed.bookingCode, parsed.phoneWa)
+          return
+        }
+      }
+
+      // Prefill kode booking jika ada query param ?code=...
+      const params = new URLSearchParams(window.location.search)
+      const qCode = params.get('code')
+      if (qCode) {
+        setBookingCode(qCode.toUpperCase())
+      }
+    } catch (e) {
+      console.error('[Session Restore Error]', e)
+    }
+  }, [])
+
+  const handleReset = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('sipko_active_booking')
+    }
+    setBooking(null)
+    setBookingCode('')
+    setPhoneWa('')
+    setError('')
+    setActionMessage('')
+  }
+
+  const handleGoHome = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('sipko_active_booking')
     }
   }
 
