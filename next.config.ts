@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Matikan floating badge "N" Next.js Development Indicator di pojok layar
+  devIndicators: false,
   // Build mandiri untuk deployment VPS (PM2)
   output: 'standalone',
   // Paket Node-only: jangan di-bundle (Baileys punya optional deps seperti jimp)
