@@ -33,6 +33,7 @@ export async function GET() {
       role: session.user?.role,
     },
   })
+}
 
 export async function POST(request: NextRequest) {
   const session = await apiAuth(['ADMIN', 'SUPER_ADMIN'])
