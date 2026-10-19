@@ -357,6 +357,9 @@ export default function CekBookingPage() {
                   placeholder="Contoh: SIP-ABCD1234"
                   value={bookingCode}
                   onChange={(e) => setBookingCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCheck()
+                  }}
                   style={{ fontFamily: 'monospace', fontSize: '1.125rem', letterSpacing: '0.05em' }}
                   maxLength={12}
                 />
@@ -370,6 +373,9 @@ export default function CekBookingPage() {
                   placeholder="Contoh: 08123456789"
                   value={phoneWa}
                   onChange={(e) => setPhoneWa(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCheck()
+                  }}
                 />
                 <span className="form-hint">Nomor harus sama dengan yang digunakan saat pengajuan</span>
               </div>
@@ -382,7 +388,7 @@ export default function CekBookingPage() {
 
               <button
                 className={`btn btn-primary btn-lg w-full${loading ? ' btn-loading' : ''}`}
-                onClick={handleCheck}
+                onClick={() => handleCheck()}
                 disabled={loading || attempts >= 10}
               >
                 {loading ? 'Memeriksa...' : '🔍 Cek Status Booking'}
