@@ -34,12 +34,18 @@ export const VALID_TRANSITIONS: BookingTransition[] = [
     description: 'Admin membatalkan pengajuan',
   },
 
-  // Dari DISETUJUI → otomatis ke MENUNGGU_PEMERIKSAAN_AWAL
+  // Dari DISETUJUI
   {
     from: 'DISETUJUI',
     to: 'MENUNGGU_PEMERIKSAAN_AWAL',
     allowedRoles: ['ADMIN', 'SUPER_ADMIN'],
     description: 'Sistem/admin memindahkan ke menunggu pemeriksaan awal',
+  },
+  {
+    from: 'DISETUJUI',
+    to: 'SIAP_BERANGKAT',
+    allowedRoles: ['PEMOHON', 'ADMIN', 'SUPER_ADMIN'],
+    description: 'Pemohon mengunggah bukti pemeriksaan awal',
   },
   {
     from: 'DISETUJUI',
@@ -53,7 +59,7 @@ export const VALID_TRANSITIONS: BookingTransition[] = [
   {
     from: 'MENUNGGU_PEMERIKSAAN_AWAL',
     to: 'SIAP_BERANGKAT',
-    allowedRoles: ['ADMIN', 'SUPER_ADMIN'],
+    allowedRoles: ['PEMOHON', 'ADMIN', 'SUPER_ADMIN'],
     description: 'Bukti pemeriksaan awal lengkap dan diverifikasi',
   },
 
