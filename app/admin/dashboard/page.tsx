@@ -89,7 +89,86 @@ export default async function AdminDashboardPage() {
         vehicle: { select: { name: true, plateNumber: true } },
       },
     }),
+    // Armada kendaraan beserta riwayat pemakaian & odometer selesai
+    prisma.vehicle.findMany({
+      where: { deletedAt: null },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        brand: true,
+        type: true,
+        plateNumber: true,
+        currentOdometer: true,
+        status: true,
+        bookings: {
+          where: {
+            deletedAt: null,
+            status: 'SELESAI',
+          },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            bookingCode: true,
+            applicantName: true,
+            destinationName: true,
+            status: true,
+            createdAt: true,
+            departureDatetime: true,
+            returnDatetime: true,
+            actualReturnAt: true,
+            inspections: {
+              orderBy: { createdAt: 'asc' },
+              select: {
+                type: true,
+                odometer: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    }),
   ])
+
+  // Format data riwayat odometer kendaraan untuk grafik pemakaian
+  const chartData: VehicleOdoData[] = vehiclesWithHistory.map((v) => {
+    const history: UsagePoint[] = []
+    let totalKmUsed = 0
+
+    for (const b of v.bookings) {
+      const preInsp = b.inspections.find((i) => i.type === 'PRE')
+      const postInsp = b.inspections.find((i) => i.type === 'POST')
+
+      if (preInsp?.odometer && postInsp?.odometer && postInsp.odometer >= preInsp.odometer) {
+        const tripDistance = postInsp.odometer - preInsp.odometer
+        totalKmUsed += tripDistance
+        history.push({
+          bookingId: b.id,
+          bookingCode: b.bookingCode,
+          applicantName: b.applicantName,
+          destinationName: b.destinationName,
+          completedAt: (b.actualReturnAt || postInsp.createdAt || b.returnDatetime).toISOString(),
+          startKm: preInsp.odometer,
+          endKm: postInsp.odometer,
+          tripDistance,
+        })
+      }
+    }
+
+    return {
+      id: v.id,
+      name: v.name,
+      brand: v.brand,
+      type: v.type,
+      plateNumber: v.plateNumber,
+      currentOdometer: v.currentOdometer || (history.length > 0 ? history[history.length - 1].endKm : 0),
+      status: v.status,
+      totalUsageKm: totalKmUsed,
+      tripCount: history.length,
+      history,
+    }
+  })
 
   const formatDate = (d: Date) =>
     d.toLocaleString('id-ID', {
@@ -215,6 +294,11 @@ export default async function AdminDashboardPage() {
             <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>Total Kendaraan</div>
           </div>
         </div>
+      </div>
+
+      {/* Grafik Pertambahan KM Kendaraan */}
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <VehicleOdometerChart vehicles={chartData} />
       </div>
 
       {/* Recent Bookings Table */}
