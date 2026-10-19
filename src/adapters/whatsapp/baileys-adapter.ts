@@ -43,7 +43,7 @@ if (!globalForBaileys.__baileysContainer) {
 
 const container = globalForBaileys.__baileysContainer
 
-/** Helper membersihkan file sesi WhatsApp jika rusak/logout */
+/** Helper membersihkan file sesi WhatsApp jika diminta eksplisit atau setelah logout */
 export function clearSessionDir(dir: string) {
   if (!fs.existsSync(dir)) return
   try {
@@ -77,11 +77,15 @@ export function normalizePhone(raw: string): string {
 export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
   async initialize(): Promise<void> {
     if (container.isInitializing) {
-      console.log('[Baileys] Sedang dalam proses inisialisasi, skip duplicate init.')
       return
     }
 
     if (container.connection.state === 'CONNECTED' && container.connection.sock) {
+      return
+    }
+
+    if (container.connection.state === 'QR_PENDING' && container.connection.sock) {
+      // Socket sedang aktif menunggu scan QR, jangan ditimpa
       return
     }
 
@@ -101,26 +105,13 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         fs.mkdirSync(sessionDir, { recursive: true })
       }
 
-      // Deteksi jika kredensial sebelumnya corrupt / belum teregistrasi
-      const credsPath = path.join(sessionDir, 'creds.json')
-      if (fs.existsSync(credsPath)) {
-        try {
-          const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'))
-          if (creds && creds.registered === false) {
-            console.warn('[Baileys] Kredensial lama belum selesai didaftarkan (registered=false). Membersihkan sesi lama agar QR baru dapat digenerate...')
-            clearSessionDir(sessionDir)
-          }
-        } catch {
-          clearSessionDir(sessionDir)
-        }
-      }
-
       // Lazy import Baileys
       const {
         default: makeWASocket,
         useMultiFileAuthState,
         DisconnectReason,
         fetchLatestBaileysVersion,
+        Browsers,
       } = await import('@whiskeysockets/baileys')
 
       const { state, saveCreds } = await useMultiFileAuthState(sessionDir)
@@ -133,7 +124,7 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         console.warn('[Baileys] Menggunakan versi internal Baileys:', verErr)
       }
 
-      // Tutup socket lama bila ada
+      // Tutup socket lama bila ada sebelum membuat socket baru
       if (container.connection.sock) {
         try {
           container.connection.sock.ev.removeAllListeners('connection.update')
@@ -148,9 +139,13 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         auth: state,
         logger: pino({ level: process.env.WA_LOG_LEVEL || 'warn' }) as any,
         printQRInTerminal: false,
+        browser: Browsers.ubuntu('Chrome'),
+        syncFullHistory: false,
+        markOnlineOnConnect: false,
+        generateHighQualityLinkPreview: false,
         connectTimeoutMs: 60000,
         defaultQueryTimeoutMs: 60000,
-        keepAliveIntervalMs: 25000,
+        keepAliveIntervalMs: 30000,
       })
 
       container.connection.sock = sock
