@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         incidentNotes: inspectionType === 'POST' ? incidentNotes : null,
         fuelFilled,
         fuelNotes: inspectionType === 'POST' ? fuelNotes : null,
-        submittedById: booking.userId || 'system',
+        submittedById: booking.userId || null,
         submittedAt: new Date(),
       },
     })
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         filePath: speedoStored.relativePath,
         fileSize: speedoStored.sizeBytes,
         mimeType: speedoStored.mimeType,
-        uploadedById: booking.userId || 'system',
+        uploadedById: booking.userId || null,
       },
     })
 
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
           filePath: stored.relativePath,
           fileSize: stored.sizeBytes,
           mimeType: stored.mimeType,
-          uploadedById: booking.userId || 'system',
+          uploadedById: booking.userId || null,
         },
       })
     }
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
           filePath: fuelStored.relativePath,
           fileSize: fuelStored.sizeBytes,
           mimeType: fuelStored.mimeType,
-          uploadedById: booking.userId || 'system',
+          uploadedById: booking.userId || null,
         },
       })
     }
