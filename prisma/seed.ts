@@ -1,4 +1,4 @@
-﻿// prisma/seed.ts — Database seed: super admin + kendaraan contoh
+// prisma/seed.ts — Database seed: super admin + kendaraan contoh
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -7,6 +7,21 @@ const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Mulai seeding database SIPKO...')
+
+  // 0. Akun Sistem (untuk Foreign Key referensi submission publik)
+  const existingSystem = await prisma.user.findFirst({ where: { id: 'system' } })
+  if (!existingSystem) {
+    await prisma.user.create({
+      data: {
+        id: 'system',
+        name: 'Sistem SIPKO',
+        email: 'system@sipko.local',
+        role: 'ADMIN',
+        isActive: true,
+      },
+    })
+    console.log('  ✅ Akun Sistem dibuat (id: system)')
+  }
 
   // 1. Super Admin
   const adminEmail = 'admin@smkn1subang.sch.id'
@@ -104,7 +119,7 @@ async function main() {
 
   for (const v of vehicleData) {
     const existing = await prisma.vehicle.findFirst({
-      where: { plateNumber: v.plateNumber, deletedAt: null },
+      where: { plateNumber: v.plateNumber },
     })
     if (!existing) {
       await prisma.vehicle.create({ data: v })
