@@ -1,13 +1,13 @@
 # scripts/generate_manual_docx.py
-# Generator Dokumen Panduan Pengguna SIPKO (Format .docx)
+# Generator Dokumen Panduan Pengguna SIPKO (Format .docx Lengkap dengan Ilustrasi Tutorial)
 
 import os
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.oxml import parse_xml, OxmlElement
-from docx.oxml.ns import nsdecls, qn
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
 
 def set_cell_background(cell, fill_hex):
     """Set background color of a table cell."""
@@ -31,7 +31,7 @@ def create_manual_document():
         section.left_margin = Inches(1.0)
         section.right_margin = Inches(1.0)
 
-    # Styles
+    # Colors
     COLOR_TEAL = RGBColor(13, 148, 136)       # #0D9488 Primary SIPKO
     COLOR_NAVY = RGBColor(30, 41, 59)        # #1E293B
     COLOR_GRAY = RGBColor(100, 116, 139)     # #64748B
@@ -49,7 +49,7 @@ def create_manual_document():
     def add_title(text):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_before = Pt(12)
+        p.paragraph_format.space_before = Pt(8)
         p.paragraph_format.space_after = Pt(4)
         run = p.add_run(text)
         run.bold = True
@@ -60,7 +60,7 @@ def create_manual_document():
     def add_subtitle(text):
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_after = Pt(24)
+        p.paragraph_format.space_after = Pt(14)
         run = p.add_run(text)
         run.font.size = Pt(13)
         run.font.color.rgb = COLOR_TEAL
@@ -89,17 +89,6 @@ def create_manual_document():
         run.font.color.rgb = COLOR_TEAL
         return p
 
-    def add_h3(text):
-        p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(10)
-        p.paragraph_format.space_after = Pt(3)
-        p.paragraph_format.keep_with_next = True
-        run = p.add_run(text)
-        run.bold = True
-        run.font.size = Pt(11)
-        run.font.color.rgb = COLOR_NAVY
-        return p
-
     def add_callout(text, title="TIPS PENTING"):
         table = doc.add_table(rows=1, cols=1)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -108,7 +97,6 @@ def create_manual_document():
         set_cell_background(cell, "F0FDFA") # Light teal tint
         set_cell_margins(cell, top=140, bottom=140, left=200, right=200)
 
-        # Border kiri tebal (teal)
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(f'<w:tcBorders {nsdecls("w")}><w:top w:val="none"/><w:left w:val="single" w:sz="36" w:space="0" w:color="0D9488"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders>')
         tcPr.append(borders)
@@ -124,9 +112,28 @@ def create_manual_document():
         r_text.font.size = Pt(10.5)
         r_text.font.color.rgb = COLOR_NAVY
 
-        # spacing after table
         p_space = doc.add_paragraph()
         p_space.paragraph_format.space_after = Pt(4)
+
+    def add_image(img_rel_path, caption="", width_inch=6.3):
+        full_path = os.path.abspath(img_rel_path)
+        if os.path.exists(full_path):
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.paragraph_format.space_before = Pt(8)
+            p.paragraph_format.space_after = Pt(3)
+            p.paragraph_format.keep_with_next = True
+            run = p.add_run()
+            run.add_picture(full_path, width=Inches(width_inch))
+            if caption:
+                p_cap = doc.add_paragraph()
+                p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                p_cap.paragraph_format.space_before = Pt(2)
+                p_cap.paragraph_format.space_after = Pt(12)
+                r_cap = p_cap.add_run(f"Ilustrasi: {caption}")
+                r_cap.font.size = Pt(9.5)
+                r_cap.font.italic = True
+                r_cap.font.color.rgb = COLOR_GRAY
 
     def add_table_data(headers, rows, col_widths=None):
         table = doc.add_table(rows=len(rows) + 1, cols=len(headers))
@@ -164,7 +171,6 @@ def create_manual_document():
         tblBorders = parse_xml(f'<w:tblBorders {nsdecls("w")}><w:top w:val="single" w:sz="4" w:space="0" w:color="CBD5E1"/><w:left w:val="none"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="94A3B8"/><w:right w:val="none"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/><w:insideV w:val="none"/></w:tblBorders>')
         tblPr.append(tblBorders)
 
-        # Set column widths if provided
         if col_widths:
             for row in table.rows:
                 for idx, width in enumerate(col_widths):
@@ -179,9 +185,13 @@ def create_manual_document():
     add_title("PANDUAN PENGGUNAAN SISTEM (USER MANUAL)")
     add_subtitle("SIPKO — SISTEM PEMINJAMAN KENDARAAN OPERASIONAL\nSMK NEGERI 1 SUBANG")
 
+    # Cover Image Banner
+    add_image("docs/tutorial_images/cover_banner.jpg", "Aplikasi SIPKO — SMKN 1 Subang", width_inch=6.2)
+
     p_meta = doc.add_paragraph()
     p_meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_meta.paragraph_format.space_after = Pt(28)
+    p_meta.paragraph_format.space_before = Pt(8)
+    p_meta.paragraph_format.space_after = Pt(14)
     r = p_meta.add_run("Dokumen Resmi untuk Pemohon & Pejabat Penyetuju (Kepala Sekolah)\nVersi 1.0 — Tahun 2026\nPortal Web: https://sipko.smkn1subang.sch.id")
     r.font.size = Pt(10.5)
     r.font.color.rgb = COLOR_GRAY
@@ -226,6 +236,9 @@ def create_manual_document():
     ]
     add_table_data(headers_alur, rows_alur, [0.6, 1.4, 2.7, 1.8])
 
+    # Diagram Infografis Alur 6 Tahap
+    add_image("docs/tutorial_images/01_alur_lengkap_sipko.png", "Diagram Infografis 6 Tahap Peminjaman Kendaraan di SIPKO")
+
     doc.add_page_break()
 
     # ==========================================
@@ -252,7 +265,7 @@ def create_manual_document():
         ["Nama Lengkap *", "Isi dengan nama lengkap pemohon beserta gelar (contoh: Drs. Ahmad Hidayat, M.Pd)."],
         ["NIP / NUPTK", "Nomor Identitas Pegawai (opsional jika honorer/staf khusus)."],
         ["Jabatan & Unit Kerja *", "Pilih jabatan (Guru / Pembina OSIS / Wakasek) dan Jurusan / Unit kerja Anda."],
-        ["Nomor WhatsApp Aktif *", "Wajib nomor WA aktif (contoh: 081234567890). Sistem akan mengirimkan notifikasi persetujuan ke nomor ini."],
+        ["Nomor WhatsApp Aktif *", "Wajib nomor WA aktif (contoh: 081234567890). Sistem akan mengirimkan notifikasi ke nomor ini."],
         ["Pilih Kendaraan *", "Pilih mobil yang berstatus 'Tersedia' (Mobil Dinas 1, Mobil Dinas 2, Minibus, atau Pickup)."],
         ["Tujuan Perjalanan *", "Nama instansi/lokasi tujuan (contoh: Dinas Pendidikan Jabar / Gedung Sate)."],
         ["Kategori Keperluan *", "Pilih kategori yang sesuai (Dinas Luar, Lomba Siswa, Kunjungan Industri, Operasional Sekolah)."],
@@ -262,17 +275,19 @@ def create_manual_document():
     add_table_data(headers_form, rows_form, [2.0, 4.5])
 
     doc.add_paragraph("4. Periksa kembali seluruh data, lalu klik tombol 'Kirim Permohonan'.")
-    doc.add_paragraph("5. Layar akan menampilkan konfirmasi bahwa pengajuan berhasil, beserta KODE BOOKING unik (contoh: SIP-A1B2C3D4).")
+
+    # Gambar Formulir Pengajuan
+    add_image("docs/tutorial_images/02_panduan_pemohon_formulir.png", "Panduan Pengisian Formulir Pengajuan Mobil Dinas")
 
     add_callout(
-        "Catat atau screenshot Kode Booking Anda (contoh: SIP-2Z6C9YRZ). "
+        "Catat atau screenshot Kode Booking unik Anda (contoh: SIP-2Z6C9YRZ). "
         "Kode ini juga akan otomatis dikirimkan oleh sistem ke nomor WhatsApp Anda.",
         "PENTING DIINGAT"
     )
 
-    add_h2("2.2 Langkah 2: Menunggu Persetujuan Kepala Sekolah")
+    add_h2("2.2 Langkah 2: Notifikasi WhatsApp Real-Time")
     doc.add_paragraph(
-        "Setelah Anda mengirim pengajuan, sistem SIPKO otomatis mengirimkan notifikasi ke WhatsApp Kepala Sekolah. "
+        "Setelah Anda mengirim pengajuan, sistem SIPKO otomatis mengirimkan notifikasi ke WhatsApp Kepala Sekolah dan pemohon. "
         "Anda tidak perlu mencetak surat pengantar fisik ke meja Kepala Sekolah."
     )
     doc.add_paragraph(
@@ -280,19 +295,16 @@ def create_manual_document():
         "bahwa peminjaman mobil Anda telah DISETUJUI, lengkap dengan rincian mobil dan jadwal."
     )
 
-    add_h2("2.3 Langkah 3: Memeriksa Status Pengajuan (Menu Cek Booking)")
-    doc.add_paragraph("Kapan pun Anda ingin melihat perkembangan status pengajuan:")
-    doc.add_paragraph("1. Kunjungi https://sipko.smkn1subang.sch.id lalu klik menu '🔍 Cek Kode Booking' (atau buka /cek-booking).")
-    doc.add_paragraph("2. Masukkan Kode Booking Anda dan Nomor WhatsApp yang didaftarkan.")
-    doc.add_paragraph("3. Klik 'Cari Booking'. Sistem akan menampilkan detail pengajuan dan status terkini.")
+    # Gambar Notifikasi WhatsApp
+    add_image("docs/tutorial_images/03_panduan_whatsapp_notifikasi.png", "Tampilan Chat WhatsApp Notifikasi Kode Booking & Persetujuan")
 
-    add_h2("2.4 Langkah 4: Pemeriksaan Awal Sebelum Berangkat (Ambil Kunci)")
+    add_h2("2.3 Langkah 3: Pemeriksaan Awal Sebelum Berangkat (Ambil Kunci)")
     doc.add_paragraph(
         "Sebelum mobil dijalankan dan kunci diserahkan oleh petugas Sarpras, pemohon diwajibkan mendokumentasikan kondisi awal mobil:"
     )
-    doc.add_paragraph("1. Masuk ke halaman Cek Booking pengajuan Anda yang berstatus DISETUJUI.")
-    doc.add_paragraph("2. Klik tombol '📸 Upload Bukti Pemeriksaan Awal'.")
-    doc.add_paragraph("3. Lengkapi 3 hal berikut:")
+    doc.add_paragraph("1. Masuk ke menu '🔍 Cek Kode Booking' (https://sipko.smkn1subang.sch.id/cek-booking).")
+    doc.add_paragraph("2. Masukkan Kode Booking Anda dan Nomor WhatsApp yang didaftarkan.")
+    doc.add_paragraph("3. Klik tombol '📸 Upload Bukti Pemeriksaan Awal'. Lengkapi input:")
     
     p_step1 = doc.add_paragraph(style='List Bullet')
     p_step1.add_run("Kilometer Awal (Odometer): ").bold = True
@@ -304,37 +316,13 @@ def create_manual_document():
 
     p_step3 = doc.add_paragraph(style='List Bullet')
     p_step3.add_run("Foto Kondisi Kendaraan (Minimal 3 Foto): ").bold = True
-    p_step3.add_run("Ambil foto interior depan, jok penumpang, dan bodi luar mobil untuk memastikan kebersihan dan kondisi mobil.")
+    p_step3.add_run("Ambil foto interior depan, jok penumpang, dan bodi luar mobil untuk memastikan kebersihan mobil.")
 
-    doc.add_paragraph("4. Klik tombol 'Kirim Bukti Awal'. Status akan berubah menjadi SIAP BERANGKAT.")
-    doc.add_paragraph("5. Saat rombongan hendak meluncur berangkat, klik tombol '🚗 Mulai Perjalanan'. Status mobil akan berubah menjadi SEDANG DIGUNAKAN.")
+    doc.add_paragraph("4. Klik tombol 'Kirim Bukti Awal'.")
+    doc.add_paragraph("5. Saat rombongan hendak meluncur berangkat keluar gerbang, klik tombol '🚗 Mulai Perjalanan'. Status mobil akan berubah menjadi SEDANG DIGUNAKAN.")
 
-    add_h2("2.5 Langkah 5: Pemeriksaan Pengembalian (Saat Tiba Kembali di Sekolah)")
-    doc.add_paragraph(
-        "Setelah tugas selesai dan mobil diparkir kembali di area sekolah SMKN 1 Subang:"
-    )
-    doc.add_paragraph("1. Buka kembali halaman Cek Booking Anda.")
-    doc.add_paragraph("2. Klik tombol '📋 Upload Bukti Pengembalian'.")
-    doc.add_paragraph("3. Masukkan data pengembalian:")
-    
-    p_ret1 = doc.add_paragraph(style='List Bullet')
-    p_ret1.add_run("Kilometer Akhir (Odometer): ").bold = True
-    p_ret1.add_run("Masukkan angka KM terbaru setelah perjalanan (angka harus lebih besar atau sama dengan KM awal).")
-
-    p_ret2 = doc.add_paragraph(style='List Bullet')
-    p_ret2.add_run("Foto Speedometer Akhir: ").bold = True
-    p_ret2.add_run("Unggah foto jelas angka KM terakhir di dashboard mobil.")
-
-    p_ret3 = doc.add_paragraph(style='List Bullet')
-    p_ret3.add_run("Foto Kondisi Fisik Mobil (3 Foto): ").bold = True
-    p_ret3.add_run("Foto kondisi kebersihan interior dan bodi mobil setelah digunakan.")
-
-    p_ret4 = doc.add_paragraph(style='List Bullet')
-    p_ret4.add_run("Struk BBM (Jika Mengisi Bensin): ").bold = True
-    p_ret4.add_run("Jika selama dinas dilakukan pengisian BBM, unggah foto struk SPBU sebagai bukti pertanggungjawaban operasional.")
-
-    doc.add_paragraph("4. Klik tombol 'Kirim Bukti Pengembalian'.")
-    doc.add_paragraph("5. Serahkan kunci mobil kepada pengelola Sarpras sekolah. Proses peminjaman dari sisi pemohon selesai!")
+    # Gambar Pemeriksaan Awal
+    add_image("docs/tutorial_images/04_panduan_pemeriksaan_awal.png", "Langkah Upload Foto Odometer & Kondisi Fisik Mobil Awal")
 
     doc.add_page_break()
 
@@ -350,84 +338,57 @@ def create_manual_document():
     add_h2("3.1 Notifikasi WhatsApp Pengajuan Masuk")
     doc.add_paragraph(
         "Setiap kali ada guru/staf yang mengajukan permohonan pinjam mobil, Kepala Sekolah akan langsung menerima "
-        "pesan WhatsApp otomatis dari SIPKO dengan format ringkas:"
-    )
-    
-    add_callout(
-        "🚨 PERMOHONAN PINJAM KENDARAAN BARU\n"
-        "Nama Pemohon : Ahmad Hidayat (Guru RPL)\n"
-        "Mobil        : Mobil Dinas 1 (D 1234 AB)\n"
-        "Tujuan       : Dinas Pendidikan Provinsi Jawa Barat, Bandung\n"
-        "Waktu        : 20 Oktober 2026, Pukul 08:00 WIB\n"
-        "Keperluan    : Koordinasi Program SMK Pusat Keunggulan\n\n"
-        "Silakan buka portal untuk meninjau persetujuan:\n"
-        "https://sipko.smkn1subang.sch.id/admin/pengajuan",
-        "CONTOH NOTIFIKASI WHATSAPP KEPSEK"
+        "pesan WhatsApp otomatis dari SIPKO dengan format ringkas yang berisi nama pemohon, mobil, tujuan, dan jam berangkat."
     )
 
-    add_h2("3.2 Langkah Login ke Portal Penyetujuan")
+    add_h2("3.2 Langkah Login & Meninjau Permohonan")
     doc.add_paragraph("1. Kunjungi halaman login resmi: https://sipko.smkn1subang.sch.id/login")
-    doc.add_paragraph("2. Masukkan kredensial akun Penyetuju:")
-    doc.add_paragraph("   • Email: kepsek@smkn1subang.sch.id (atau email dinas Anda)")
+    doc.add_paragraph("2. Masukkan akun Penyetuju:")
+    doc.add_paragraph("   • Email: kepsek@smkn1subang.sch.id")
     doc.add_paragraph("   • Password: (password akun Anda)")
-    doc.add_paragraph("3. Klik tombol 'Masuk'. Anda akan diarahkan ke Dashboard Penyetujuan.")
-
-    add_h2("3.3 Meninjau & Menyetujui Permohonan")
-    doc.add_paragraph("1. Pada menu sidebar sebelah kiri, klik menu '📝 Pengajuan & Persetujuan' (atau langsung di kartu 'Menunggu Persetujuan').")
-    doc.add_paragraph("2. Klik pada baris pengajuan pemohon yang ingin ditinjau.")
-    doc.add_paragraph("3. Halaman detail akan menampilkan informasi komprehensif:")
-    doc.add_paragraph("   • Identitas pemohon & nomor kontak.")
-    doc.add_paragraph("   • Armada mobil yang dipilih.")
-    doc.add_paragraph("   • Tujuan perjalanan beserta estimasi jarak tempuh kilometer.")
-    doc.add_paragraph("   • Jadwal keberangkatan dan kepulangan.")
-    doc.add_paragraph("4. Di bagian bawah formulir, terdapat 2 pilihan tindakan:")
+    doc.add_paragraph("3. Masuk ke menu '📝 Pengajuan & Persetujuan' di sidebar.")
+    doc.add_paragraph("4. Klik pengajuan pemohon untuk melihat detail lengkap (pemohon, mobil, estimasi jarak KM, dan keperluan dinas).")
+    doc.add_paragraph("5. Di bagian bawah formulir, tentukan keputusan:")
     
     p_act1 = doc.add_paragraph(style='List Bullet')
-    p_act1.add_run("Tombol Hijau [Setujui Pengajuan]: ").bold = True
-    p_act1.add_run("Klik jika permohonan dinas diizinkan. Sistem otomatis mengirimkan WhatsApp ke pemohon bahwa izin telah keluar.")
+    p_act1.add_run("Tombol Hijau [✓ Setujui Pengajuan]: ").bold = True
+    p_act1.add_run("Permohonan diizinkan. Pemohon langsung menerima konfirmasi WhatsApp.")
 
     p_act2 = doc.add_paragraph(style='List Bullet')
-    p_act2.add_run("Tombol Merah [Tolak Pengajuan]: ").bold = True
-    p_act2.add_run("Klik jika terdapat kendala (misal jadwal bentrok atau keperluan non-prioritas). Tuliskan alasan penolakan agar pemohon memahami alasan tersebut.")
+    p_act2.add_run("Tombol Merah [✕ Tolak Pengajuan]: ").bold = True
+    p_act2.add_run("Permohonan ditolak (sertakan alasan penolakan pada kolom catatan).")
 
-    add_h2("3.4 Melihat Ketersediaan Mobil di Kalender")
-    doc.add_paragraph(
-        "Sebelum menyetujui, Kepala Sekolah dapat melihat jadwal armada sekolah secara visual melalui menu '📅 Kalender Kendaraan'. "
-        "Di kalender tersebut tampak mobil mana saja yang sedang dipakai, jadwal booking yang sudah disetujui, "
-        "dan mobil mana yang berstatus kosong/tersedia."
-    )
+    # Gambar Halaman Persetujuan Kepsek
+    add_image("docs/tutorial_images/05_panduan_persetujuan_kepsek.png", "Halaman Tinjauan & Tombol Persetujuan Kepala Sekolah")
 
     doc.add_page_break()
 
     # ==========================================
     # BAB 4: PANDUAN PENGELOLA SARPRAS & ADMIN
     # ==========================================
-    add_h1("BAB 4: PANDUAN ADMINISTRATOR SARPRAS")
+    add_h1("BAB 4: PENGEMBALIAN & GRAFIK KM OTOMATIS")
     doc.add_paragraph(
-        "Administrator Sarana & Prasarana bertugas mengelola fisik armada, memverifikasi bukti pengembalian, "
-        "memantau pemeliharaan kilometer mobil, dan mencetak laporan berkala."
+        "Setelah perjalanan dinas selesai, pemohon mengembalikan mobil dan mengunggah bukti pengembalian. "
+        "Sistem secara otomatis menghitung jarak tempuh dan memperbarui grafik kilometer mobil."
     )
 
-    add_h2("4.1 Memeriksa Bukti Pengembalian Mobil")
-    doc.add_paragraph("1. Masuk ke menu '📋 Pemeriksaan Pengembalian'.")
-    doc.add_paragraph("2. Klik pada booking yang berstatus 'MENUNGGU PEMERIKSAAN PENGEMBALIAN'.")
-    doc.add_paragraph("3. Periksa foto speedometer akhir dan bandingkan dengan kilometer awal.")
-    doc.add_paragraph("4. Periksa galeri foto kondisi fisik mobil dan struk BBM.")
-    doc.add_paragraph("5. Klik 'Selesai / Verifikasi Pengembalian'. Sistem otomatis memperbarui status mobil menjadi TERSEDIA kembali dan mencatat pertambahan kilometer.")
+    add_h2("4.1 Langkah Pengembalian oleh Pemohon")
+    doc.add_paragraph("1. Buka kembali halaman Cek Booking Anda di web SIPKO.")
+    doc.add_paragraph("2. Klik tombol '📋 Upload Bukti Pengembalian'.")
+    doc.add_paragraph("3. Masukkan angka Kilometer Akhir (Odometer) terbaru.")
+    doc.add_paragraph("4. Unggah foto speedometer akhir dan foto kebersihan fisik mobil.")
+    doc.add_paragraph("5. Jika selama perjalanan dinas dilakukan pengisian BBM, unggah foto struk pembelian BBM SPBU.")
+    doc.add_paragraph("6. Klik 'Kirim Bukti Pengembalian' dan serahkan kunci mobil ke staf Sarpras.")
 
-    add_h2("4.2 Memantau Grafik Pertambahan KM & Odometer")
+    add_h2("4.2 Pembaruan Otomatis Odometer & Grafik KM")
     doc.add_paragraph(
-        "SIPKO dilengkapi grafik visual interaktif di menu '📈 Grafik KM Kendaraan' dan pada halaman utama Dashboard. "
-        "Setiap perjalanan selesai, kurva kilometer mobil otomatis naik sesuai jarak tempuh aktual. "
-        "Fitur ini memudahkan staf sarpras memantau jadwal servis berkala, ganti oli, dan riwayat pemakaian masing-masing mobil."
+        "Begitu admin Sarpras memverifikasi pengembalian, status booking menjadi SELESAI. "
+        "Odometer kendaraan langsung terupdate secara real-time dan kurva grafik pemakaian di menu "
+        "'📈 Grafik KM Kendaraan' serta Dashboard Admin otomatis bertambah sesuai jarak tempuh perjalanan."
     )
 
-    add_h2("4.3 Mencetak Laporan Rekapitulasi (PDF & Excel)")
-    doc.add_paragraph("1. Buka menu '🖨️ Laporan & Cetak' (/admin/laporan).")
-    doc.add_paragraph("2. Halaman menampilkan ringkasan pengajuan bulan ini, mobil terlaris, dan rute dinas terfavorit.")
-    doc.add_paragraph("3. Di pojok kanan atas, tersedia 2 tombol ekspor:")
-    doc.add_paragraph("   • 📊 Export Excel: Mengunduh rekapitulasi data lengkap dalam format tabel spreadsheet .xlsx.")
-    doc.add_paragraph("   • 📄 Export PDF: Mengunduh dokumen laporan resmi A4 Landscape lengkap dengan kop SMKN 1 Subang yang siap dicetak/diserahkan ke pimpinan.")
+    # Gambar Pengembalian & Grafik KM
+    add_image("docs/tutorial_images/06_panduan_pengembalian_dan_grafik.png", "Tahap Pengembalian, Upload Struk BBM, dan Update Grafik KM Otomatis")
 
     # ==========================================
     # BAB 5: TANYA JAWAB UMUM (FAQ)
@@ -462,10 +423,18 @@ def create_manual_document():
         r_a.font.color.rgb = COLOR_DARK
 
     # Simpan dokumen
-    output_filename = "PANDUAN_PENGGUNAAN_SIPKO_SMKN1_SUBANG.docx"
+    output_filename = "PANDUAN_PENGGUNAAN_SIPKO_SMKN1_SUBANG_LENGKAP_BERGAMBAR.docx"
     output_path = os.path.abspath(output_filename)
     doc.save(output_path)
-    print(f"Dokumen berhasil dibuat: {output_path}")
+    print(f"Dokumen berhasil dibuat dengan gambar: {output_path}")
+
+    # Coba simpan juga ke nama asli jika Word sedang tidak mengunci
+    try:
+        alt_path = os.path.abspath("PANDUAN_PENGGUNAAN_SIPKO_SMKN1_SUBANG.docx")
+        doc.save(alt_path)
+        print(f"Dokumen asli juga berhasil diperbarui: {alt_path}")
+    except Exception as e:
+        print(f"Catatan: File asli sedang dibuka di aplikasi lain, versi bergambar tersimpan di: {output_path}")
 
 if __name__ == "__main__":
     create_manual_document()
