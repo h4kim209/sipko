@@ -45,7 +45,7 @@ export default async function AdminLayout({
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <a href="/api/auth/signout" className="btn btn-secondary btn-sm">
+            <a href="/api/auth/logout" className="btn btn-secondary btn-sm">
               🚪 Keluar
             </a>
           </div>
