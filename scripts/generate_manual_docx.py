@@ -182,11 +182,21 @@ def create_manual_document():
     # ==========================================
     # HALAMAN JUDUL / COVER
     # ==========================================
+    # Logo Resmi Sekolah di Halaman Sampul
+    logo_path = os.path.abspath("docs/tutorial_images/logo_smkn1subang.png")
+    if os.path.exists(logo_path):
+        p_logo = doc.add_paragraph()
+        p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_logo.paragraph_format.space_before = Pt(0)
+        p_logo.paragraph_format.space_after = Pt(4)
+        run_logo = p_logo.add_run()
+        run_logo.add_picture(logo_path, width=Inches(1.2))
+
     add_title("PANDUAN PENGGUNAAN SISTEM (USER MANUAL)")
     add_subtitle("SIPKO — SISTEM PEMINJAMAN KENDARAAN OPERASIONAL\nSMK NEGERI 1 SUBANG")
 
-    # Cover Image Banner
-    add_image("docs/tutorial_images/cover_banner.jpg", "Aplikasi SIPKO — SMKN 1 Subang", width_inch=6.2)
+    # Cover Image Banner (Honda BR-V & Logo Resmi SMKN 1 Subang)
+    add_image("docs/tutorial_images/cover_banner.jpg", "Aplikasi SIPKO — SMKN 1 Subang (Armada Honda BR-V)", width_inch=6.2)
 
     p_meta = doc.add_paragraph()
     p_meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -266,7 +276,7 @@ def create_manual_document():
         ["NIP / NUPTK", "Nomor Identitas Pegawai (opsional jika honorer/staf khusus)."],
         ["Jabatan & Unit Kerja *", "Pilih jabatan (Guru / Pembina OSIS / Wakasek) dan Jurusan / Unit kerja Anda."],
         ["Nomor WhatsApp Aktif *", "Wajib nomor WA aktif (contoh: 081234567890). Sistem akan mengirimkan notifikasi ke nomor ini."],
-        ["Pilih Kendaraan *", "Pilih mobil yang berstatus 'Tersedia' (Mobil Dinas 1, Mobil Dinas 2, Minibus, atau Pickup)."],
+        ["Pilih Kendaraan *", "Pilih mobil yang berstatus 'Tersedia' (Honda BR-V, Mobil Dinas 2, Minibus, atau Pickup)."],
         ["Tujuan Perjalanan *", "Nama instansi/lokasi tujuan (contoh: Dinas Pendidikan Jabar / Gedung Sate)."],
         ["Kategori Keperluan *", "Pilih kategori yang sesuai (Dinas Luar, Lomba Siswa, Kunjungan Industri, Operasional Sekolah)."],
         ["Waktu Berangkat & Kembali *", "Pilih tanggal dan jam keberangkatan serta estimasi jam kembali ke sekolah."],

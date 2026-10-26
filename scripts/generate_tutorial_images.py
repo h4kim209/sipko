@@ -37,16 +37,27 @@ def get_font(size, bold=False):
 def draw_rounded_rect(draw, bbox, radius, fill=None, outline=None, width=1):
     draw.rounded_rectangle(bbox, radius=radius, fill=fill, outline=outline, width=width)
 
-def draw_header(draw, title, subtitle, width):
+def draw_header(draw, title, subtitle, width, img=None):
     # Top banner
-    draw.rectangle([0, 0, width, 90], fill=NAVY)
-    draw.rectangle([0, 86, width, 90], fill=TEAL)
+    draw.rectangle([0, 0, width, 95], fill=NAVY)
+    draw.rectangle([0, 91, width, 95], fill=TEAL)
     
-    font_title = get_font(26, bold=True)
-    font_sub = get_font(14, bold=False)
+    font_title = get_font(24, bold=True)
+    font_sub = get_font(13, bold=False)
     
-    draw.text((40, 20), title, fill=WHITE, font=font_title)
-    draw.text((40, 54), subtitle, fill=(153, 246, 228), font=font_sub)
+    text_x = 40
+    logo_path = os.path.join(OUTPUT_DIR, "logo_smkn1subang.png")
+    if img and os.path.exists(logo_path):
+        try:
+            logo = Image.open(logo_path).convert("RGBA")
+            logo = logo.resize((68, 68), Image.Resampling.LANCZOS)
+            img.paste(logo, (35, 14), logo)
+            text_x = 120
+        except Exception:
+            pass
+    
+    draw.text((text_x, 20), title, fill=WHITE, font=font_title)
+    draw.text((text_x, 56), subtitle, fill=(153, 246, 228), font=font_sub)
 
 def create_img_01_alur_lengkap():
     """Diagram Alur 6 Tahap Peminjaman Kendaraan"""
@@ -54,7 +65,7 @@ def create_img_01_alur_lengkap():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "ALUR PROSES PEMINJAMAN KENDARAAN (SIPKO)", "SMK NEGERI 1 SUBANG — SISTEM DIGITAL PAPERLESS", width)
+    draw_header(draw, "ALUR PROSES PEMINJAMAN KENDARAAN (SIPKO)", "SMK NEGERI 1 SUBANG — SISTEM DIGITAL PAPERLESS", width, img=img)
 
     steps = [
         ("1. Buat Pengajuan", "Pemohon mengisi form online di web tanpa perlu login.", "Pemohon", TEAL, "https://sipko..."),
@@ -123,7 +134,7 @@ def create_img_02_formulir_pemohon():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "PANDUAN PEMOHON: MENGISI FORMULIR PENGAJUAN", "LANGKAH 1: AKSES WEBSITE & ISI DATA PEMINJAMAN", width)
+    draw_header(draw, "PANDUAN PEMOHON: MENGISI FORMULIR PENGAJUAN", "LANGKAH 1: AKSES WEBSITE & ISI DATA PEMINJAMAN", width, img=img)
 
     # Left Column: Form Mockup (Width 640)
     fx, fy = 40, 120
@@ -139,7 +150,7 @@ def create_img_02_formulir_pemohon():
         ("NIP / NUPTK", "19780512 200501 1 004"),
         ("Jabatan & Unit *", "Guru Pembina OSIS — Rekayasa Perangkat Lunak"),
         ("Nomor WhatsApp Aktif *", "081234567890 (Menerima Notifikasi Kode Booking)"),
-        ("Pilih Kendaraan *", "Mobil Dinas 1 — Toyota Avanza (D 1234 AB) [Tersedia]"),
+        ("Pilih Kendaraan *", "Mobil Dinas 1 — Honda BR-V (D 1234 AB) [Tersedia]"),
         ("Tujuan Perjalanan *", "Dinas Pendidikan Provinsi Jawa Barat, Bandung"),
         ("Waktu Berangkat & Kembali *", "21 Okt 2026, 08:00 WIB s/d 21 Okt 2026, 16:00 WIB"),
     ]
@@ -196,7 +207,7 @@ def create_img_03_notifikasi_whatsapp():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "NOTIFIKASI WHATSAPP REAL-TIME DARI SISTEM", "INTEGRASI OTOMATIS KE HP PEMOHON & KEPALA SEKOLAH", width)
+    draw_header(draw, "NOTIFIKASI WHATSAPP REAL-TIME DARI SISTEM", "INTEGRASI OTOMATIS KE HP PEMOHON & KEPALA SEKOLAH", width, img=img)
 
     # Left: Smartphone Chat Pemohon
     w1_x, w1_y = 60, 120
@@ -215,7 +226,7 @@ def create_img_03_notifikasi_whatsapp():
         "Halo Bpk/Ibu Drs. Ahmad Hidayat,\n\n"
         "Pengajuan peminjaman kendaraan Anda telah kami terima:\n"
         "• Kode Booking : SIP-2Z6C9YRZ\n"
-        "• Mobil        : Mobil Dinas 1 (D 1234 AB)\n"
+        "• Mobil        : Mobil Dinas 1 — Honda BR-V (D 1234 AB)\n"
         "• Tujuan       : Disdik Jabar, Bandung\n"
         "• Jadwal       : 21 Okt 2026, 08:00 WIB\n\n"
         "Saat ini pengajuan sedang menunggu peninjauan Kepala Sekolah."
@@ -252,7 +263,7 @@ def create_img_03_notifikasi_whatsapp():
         "Yth. Bapak/Ibu Kepala Sekolah SMKN 1 Subang,\n\n"
         "Terdapat permohonan pinjam mobil dinas baru:\n\n"
         "• Pemohon   : Drs. Ahmad Hidayat (Guru RPL)\n"
-        "• Mobil     : Mobil Dinas 1 (D 1234 AB)\n"
+        "• Mobil     : Mobil Dinas 1 — Honda BR-V (D 1234 AB)\n"
         "• Tujuan    : Disdik Jabar, Bandung\n"
         "• Jadwal    : 21 Okt 2026, 08:00 WIB\n"
         "• Keperluan : Koordinasi Program SMK PK\n"
@@ -278,7 +289,7 @@ def create_img_04_pemeriksaan_awal():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "PANDUAN PEMOHON: PEMERIKSAAN AWAL SEBELUM BERANGKAT", "LANGKAH 3: INPUT KM ODOMETER, FOTO SPEEDOMETER & FOTO MOBIL", width)
+    draw_header(draw, "PANDUAN PEMOHON: PEMERIKSAAN AWAL SEBELUM BERANGKAT", "LANGKAH 3: INPUT KM ODOMETER, FOTO SPEEDOMETER & FOTO MOBIL", width, img=img)
 
     # Left: Modal Form Upload Pemeriksaan Awal
     mx, my = 40, 120
@@ -347,7 +358,7 @@ def create_img_05_persetujuan_kepsek():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "PANDUAN KEPALA SEKOLAH: PENINJAUAN & PERSETUJUAN", "PORTAL APPROVER — MENYETUJUI ATAU MENOLAK PENGAJUAN PINJAM MOBIL", width)
+    draw_header(draw, "PANDUAN KEPALA SEKOLAH: PENINJAUAN & PERSETUJUAN", "PORTAL APPROVER — MENYETUJUI ATAU MENOLAK PENGAJUAN PINJAM MOBIL", width, img=img)
 
     # Portal Approval Mockup
     px, py = 80, 130
@@ -371,7 +382,7 @@ def create_img_05_persetujuan_kepsek():
         ("Nama Pemohon", "Drs. Ahmad Hidayat, M.Pd"),
         ("Jabatan / Unit", "Guru Pembina OSIS / Rekayasa Perangkat Lunak"),
         ("Nomor WhatsApp", "081234567890"),
-        ("Mobil Dinas", "Mobil Dinas 1 — Toyota Avanza (D 1234 AB)"),
+        ("Mobil Dinas", "Mobil Dinas 1 — Honda BR-V (D 1234 AB)"),
     ]
 
     info_right = [
@@ -424,7 +435,7 @@ def create_img_06_pengembalian_dan_grafik():
     img = Image.new("RGB", (width, height), NAVY_LIGHT)
     draw = ImageDraw.Draw(img)
 
-    draw_header(draw, "PENGEMBALIAN KENDARAAN & GRAFIK KM OTOMATIS", "LANGKAH 5 & 6: UPLOAD STRUK BBM, SELESAI, DAN UPDATE ODOMETER", width)
+    draw_header(draw, "PENGEMBALIAN KENDARAAN & GRAFIK KM OTOMATIS", "LANGKAH 5 & 6: UPLOAD STRUK BBM, SELESAI, DAN UPDATE ODOMETER", width, img=img)
 
     # Left: Upload Pengembalian
     gx, gy = 40, 120
@@ -463,7 +474,7 @@ def create_img_06_pengembalian_dan_grafik():
 
     # Simulated Chart Box
     draw_rounded_rect(draw, [rx + 24, ry + 80, rx + rw - 24, ry + 360], radius=10, fill=NAVY_LIGHT, outline=BORDER)
-    draw.text((rx + 40, ry + 95), "Tren Kumulatif Jarak Tempuh Mobil Dinas 1 (D 1234 AB)", fill=NAVY, font=get_font(13, bold=True))
+    draw.text((rx + 40, ry + 95), "Tren Kumulatif Jarak Tempuh Honda BR-V (D 1234 AB)", fill=NAVY, font=get_font(13, bold=True))
     draw.text((rx + 40, ry + 120), "Odometer Terakhir: 93,120 km  |  Total Pemakaian: 119 km", fill=TEAL, font=get_font(12, bold=True))
 
     # Chart Line Mockup (Draw points & gradient line)
