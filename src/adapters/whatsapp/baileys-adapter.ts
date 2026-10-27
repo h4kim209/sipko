@@ -130,6 +130,7 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         try {
           container.connection.sock.ev.removeAllListeners('connection.update')
           container.connection.sock.ev.removeAllListeners('creds.update')
+          container.connection.sock.ev.removeAllListeners('messages.upsert')
           container.connection.sock.end(new Error('Resetting socket'))
         } catch {}
         container.connection.sock = null
@@ -216,6 +217,15 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       })
 
       sock.ev.on('creds.update', saveCreds)
+
+      sock.ev.on('messages.upsert', async (upsert: any) => {
+        try {
+          const { handleIncomingWhatsAppMessage } = await import('./whatsapp-bot-handler')
+          await handleIncomingWhatsAppMessage(sock, upsert)
+        } catch (msgErr) {
+          console.error('[Baileys Message Event Error]', msgErr)
+        }
+      })
     } catch (err: any) {
       console.error('[Baileys] Gagal inisialisasi:', err)
       container.connection.state = 'DISCONNECTED'
@@ -262,6 +272,7 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
         try {
           container.connection.sock.ev.removeAllListeners('connection.update')
           container.connection.sock.ev.removeAllListeners('creds.update')
+          container.connection.sock.ev.removeAllListeners('messages.upsert')
           container.connection.sock.end(new Error('Manual reconnect'))
         } catch {}
       }

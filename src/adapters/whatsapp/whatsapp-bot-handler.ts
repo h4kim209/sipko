@@ -1,0 +1,412 @@
+// src/adapters/whatsapp/whatsapp-bot-handler.ts
+// Handler interaktif pesan masuk WhatsApp untuk persetujuan cepat (Kepala Sekolah / Tim Manajemen)
+
+import { prisma } from '@/lib/prisma'
+import { normalizePhone } from './baileys-adapter'
+import { processBookingApproval, formatWaDate } from '@/lib/booking-approval-service'
+
+// Cache untuk mendeteksi & mencegah duplikasi pesan yang diproses ulang
+const processedMessageIds = new Set<string>()
+
+function recordProcessedMessage(id: string): boolean {
+  if (processedMessageIds.has(id)) {
+    return true
+  }
+  processedMessageIds.add(id)
+  if (processedMessageIds.size > 2000) {
+    const iter = processedMessageIds.values()
+    for (let i = 0; i < 500; i++) {
+      const v = iter.next().value
+      if (v) processedMessageIds.delete(v)
+    }
+  }
+  return false
+}
+
+export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Promise<void> {
+  const { messages, type } = upsert
+  if (type !== 'notify' && type !== 'append') return
+  if (!Array.isArray(messages) || messages.length === 0) return
+
+  for (const msg of messages) {
+    try {
+      if (!msg?.message || msg.key?.fromMe) continue
+
+      const remoteJid: string = msg.key?.remoteJid || ''
+      if (!remoteJid || remoteJid.endsWith('@g.us') || remoteJid === 'status@broadcast') {
+        continue
+      }
+
+      // Hindari duplikasi proses
+      const msgId = msg.key?.id
+      if (msgId && recordProcessedMessage(msgId)) {
+        continue
+      }
+
+      // Abaikan pesan usang (> 2 menit) saat bot baru tersambung kembali
+      const msgTime =
+        typeof msg.messageTimestamp === 'number'
+          ? msg.messageTimestamp * 1000
+          : typeof msg.messageTimestamp?.toNumber === 'function'
+          ? msg.messageTimestamp.toNumber() * 1000
+          : Date.now()
+
+      if (Date.now() - msgTime > 120_000) {
+        continue
+      }
+
+      // Ambil teks pesan
+      const rawText: string = (
+        msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        msg.message?.buttonsResponseMessage?.selectedButtonId ||
+        msg.message?.templateButtonReplyMessage?.selectedId ||
+        msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+        ''
+      ).trim()
+
+      if (!rawText) continue
+
+      // Normalisasi nomor pengirim
+      const rawNumber = remoteJid.split('@')[0]
+      const cleanSender = normalizePhone(rawNumber)
+      if (!cleanSender) continue
+
+      console.log(`[WA Bot] Pesan masuk dari ${cleanSender}: "${rawText}"`)
+
+      // Helper untuk membalas pesan (quote chat)
+      const reply = async (text: string) => {
+        try {
+          await sock.sendMessage(remoteJid, { text }, { quoted: msg })
+        } catch (err) {
+          console.error(`[WA Bot] Gagal mengirim pesan balasan ke ${remoteJid}:`, err)
+        }
+      }
+
+      // Cari user pejabat penyetuju di database
+      let approver = await prisma.user.findFirst({
+        where: {
+          phoneWa: {
+            in: [
+              cleanSender,
+              '0' + cleanSender.slice(2),
+              '+' + cleanSender,
+              '+62' + cleanSender.slice(2),
+            ],
+          },
+          role: { in: ['APPROVER', 'SUPER_ADMIN', 'ADMIN'] },
+          isActive: true,
+          deletedAt: null,
+        },
+      })
+
+      if (!approver) {
+        // Fallback pencarian fleksibel nomor jika tersimpan dengan strip/spasi
+        const candidates = await prisma.user.findMany({
+          where: {
+            role: { in: ['APPROVER', 'SUPER_ADMIN', 'ADMIN'] },
+            isActive: true,
+            deletedAt: null,
+            phoneWa: { not: null },
+          },
+        })
+        approver = candidates.find((u) => u.phoneWa && normalizePhone(u.phoneWa) === cleanSender) || null
+      }
+
+      // Jika nomor pengirim BUKAN pejabat penyetuju / admin
+      if (!approver) {
+        const lower = rawText.toLowerCase()
+        const isTrigger = ['1', '2', 'setuju', 'tolak', 'status', 'cek', 'menu', 'bantuan', 'info'].some(
+          (k) => lower.startsWith(k)
+        )
+        if (isTrigger) {
+          await reply(
+            `*SIPKO SMKN 1 SUBANG* 🚗\n\n` +
+            `Halo! Nomor Anda (*+${cleanSender}*) belum terdaftar sebagai Pejabat Penyetuju (Kepala Sekolah / Tim Manajemen SIPKO).\n\n` +
+            `Untuk memantau status peminjaman Anda, silakan buka menu Cek Booking di website resmi SIPKO:\n` +
+            `${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/cek-booking\n\n` +
+            `Terima kasih 🙏`
+          )
+        }
+        continue
+      }
+
+      // Pengirim terotentikasi sebagai Pejabat Penyetuju (Kepsek / Admin)
+      await processApproverCommand(approver, rawText, reply)
+    } catch (msgErr) {
+      console.error('[WA Bot Message Processing Error]', msgErr)
+    }
+  }
+}
+
+async function processApproverCommand(
+  approver: { id: string; name: string | null; role: string },
+  text: string,
+  reply: (text: string) => Promise<void>
+) {
+  const trimmed = text.trim()
+  const lower = trimmed.toLowerCase()
+
+  // 1. Ekstrak kode booking jika disebutkan eksplisit dalam teks (contoh: SIP-2Z6C9YRZ)
+  const bookingCodeMatch = text.match(/\b(SIP-[A-Za-z0-9]+)\b/i)
+  const explicitBookingCode = bookingCodeMatch ? bookingCodeMatch[1].toUpperCase() : null
+
+  // 2. Klasifikasi intensi perintah
+  let intention: 'APPROVE' | 'REJECT' | 'STATUS' | 'HELP' | 'UNKNOWN' = 'UNKNOWN'
+  let rejectionReason: string | null = null
+
+  if (
+    ['status', 'cek', 'info', 'list', 'antrian', 'daftar', 'pengajuan'].includes(lower) ||
+    lower.startsWith('status ') ||
+    lower.startsWith('cek ') ||
+    lower.startsWith('info ')
+  ) {
+    intention = 'STATUS'
+  } else if (['bantuan', 'help', 'menu', 'panduan', 'halo', 'hai', 'p', '?'].includes(lower)) {
+    intention = 'HELP'
+  } else if (
+    lower === '1' ||
+    lower.startsWith('1 ') ||
+    lower.startsWith('1.') ||
+    lower.startsWith('1-') ||
+    lower.startsWith('setuju') ||
+    lower.startsWith('acc') ||
+    lower.startsWith('approve') ||
+    lower === 'ya' ||
+    lower === 'oke' ||
+    lower === 'ok'
+  ) {
+    intention = 'APPROVE'
+  } else if (
+    lower === '2' ||
+    lower.startsWith('2 ') ||
+    lower.startsWith('2.') ||
+    lower.startsWith('2-') ||
+    lower.startsWith('tolak') ||
+    lower.startsWith('reject') ||
+    lower.startsWith('tidak')
+  ) {
+    intention = 'REJECT'
+
+    // Ekstrak alasan: hapus awalan angka 2 / tolak dan kode booking jika ada
+    let remainder = trimmed
+    remainder = remainder.replace(/^(2[\.\s\-:]*|tolak[\s\-:]*|reject[\s\-:]*|tidak[\s\-:]*)/i, '').trim()
+
+    if (explicitBookingCode) {
+      remainder = remainder.replace(new RegExp(explicitBookingCode, 'i'), '').trim()
+    }
+
+    remainder = remainder.replace(/^[\-:,]\s*/, '').trim()
+    rejectionReason = remainder || null
+  }
+
+  // 3. Ambil daftar booking yang saat ini sedang menunggu persetujuan
+  const pendingBookings = await prisma.booking.findMany({
+    where: {
+      status: 'MENUNGGU_PERSETUJUAN',
+      deletedAt: null,
+    },
+    include: {
+      vehicle: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
+
+  // JIKA PERINTAH STATUS
+  if (intention === 'STATUS') {
+    if (pendingBookings.length === 0) {
+      await reply(
+        `📋 *STATUS SIPKO SMKN 1 SUBANG*\n\n` +
+        `Yth. Bapak/Ibu *${approver.name || 'Pejabat Penyetuju'}*,\n` +
+        `Saat ini *TIDAK ADA* pengajuan peminjaman kendaraan yang menunggu persetujuan. Semua pengajuan telah diproses.\n\n` +
+        `Dashboard Web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
+      )
+      return
+    }
+
+    const listText = pendingBookings
+      .map(
+        (b, idx) =>
+          `${idx + 1}. 🔖 *${b.bookingCode}*\n` +
+          `   👤 Pemohon: ${b.applicantName} (${b.applicantJabatan})\n` +
+          `   📍 Tujuan: ${b.destinationName}\n` +
+          `   📅 Berangkat: ${formatWaDate(b.departureDatetime)}\n` +
+          `   📅 Kembali: ${formatWaDate(b.returnDatetime)}\n` +
+          `   🚙 Kendaraan: ${b.vehicle ? `${b.vehicle.name} (${b.vehicle.plateNumber})` : 'Belum ditentukan'}`
+      )
+      .join('\n\n')
+
+    await reply(
+      `📋 *PENGAJUAN MENUNGGU PERSETUJUAN (${pendingBookings.length})*\n\n` +
+      `${listText}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚡ *CARA MEMPROSES CEPAT:*\n` +
+      `👉 Balas *1 ${pendingBookings[0].bookingCode}* untuk Setuju\n` +
+      `👉 Balas *2 ${pendingBookings[0].bookingCode} [Alasan]* untuk Tolak\n` +
+      `━━━━━━━━━━━━━━━━━━━━`
+    )
+    return
+  }
+
+  // JIKA PERINTAH BANTUAN / PANDUAN
+  if (intention === 'HELP' || intention === 'UNKNOWN') {
+    await reply(
+      `*SIPKO — Layanan Persetujuan WhatsApp* 🚗\n` +
+      `SMK Negeri 1 Subang\n\n` +
+      `Yth. Bapak/Ibu *${approver.name || 'Pejabat Penyetuju'}*,\n` +
+      `Anda dapat memproses persetujuan peminjaman kendaraan langsung via pesan WhatsApp ini:\n\n` +
+      `📌 *FORMAT BALASAN:*\n` +
+      `1️⃣ *1* atau *1 [KODE_BOOKING]*\n` +
+      `   Untuk *MENYETUJUI* pengajuan.\n` +
+      `   Contoh: *1* atau *1 SIP-2Z6C9YRZ*\n\n` +
+      `2️⃣ *2 [Alasan]* atau *2 [KODE_BOOKING] [Alasan]*\n` +
+      `   Untuk *MENOLAK* pengajuan (alasan wajib diisi).\n` +
+      `   Contoh: *2 Mobil dipakai dinas ke Disdik*\n` +
+      `   atau: *2 SIP-2Z6C9YRZ Jadwal bentrok*\n\n` +
+      `3️⃣ *STATUS*\n` +
+      `   Melihat daftar pengajuan yang sedang menunggu persetujuan.\n\n` +
+      `🌐 Buka web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
+    )
+    return
+  }
+
+  // JIKA PERINTAH SETUJU (1)
+  if (intention === 'APPROVE') {
+    let targetCode: string | null = explicitBookingCode
+
+    if (!targetCode) {
+      if (pendingBookings.length === 0) {
+        await reply(
+          `ℹ️ *Tidak Ada Pengajuan Menunggu*\n\n` +
+          `Saat ini tidak ada permohonan peminjaman kendaraan yang sedang menunggu persetujuan.`
+        )
+        return
+      }
+
+      if (pendingBookings.length === 1) {
+        targetCode = pendingBookings[0].bookingCode
+      } else {
+        // Lebih dari 1 pengajuan menunggu, minta kepsek tentukan kodenya
+        const optionsText = pendingBookings
+          .map(
+            (b, idx) =>
+              `${idx + 1}. *${b.bookingCode}* — ${b.applicantName} (${b.destinationName})\n   📅 ${formatWaDate(b.departureDatetime)}`
+          )
+          .join('\n\n')
+
+        await reply(
+          `⚠️ *Terdapat ${pendingBookings.length} Pengajuan Menunggu Persetujuan:*\n\n` +
+          `${optionsText}\n\n` +
+          `Mohon tentukan kode booking yang ingin disetujui:\n` +
+          `👉 Balas *1 [KODE_BOOKING]*\n` +
+          `Contoh: *1 ${pendingBookings[0].bookingCode}*`
+        )
+        return
+      }
+    }
+
+    // Eksekusi persetujuan melalui service terpadu
+    const result = await processBookingApproval({
+      bookingCode: targetCode,
+      decision: 'APPROVE',
+      actor: approver,
+      source: 'WHATSAPP',
+    })
+
+    if (!result.success) {
+      await reply(`❌ *Persetujuan Gagal*\n\n${result.error || 'Terjadi kendala saat memproses booking.'}`)
+      return
+    }
+
+    const b = result.booking
+    await reply(
+      `✅ *PENGAJUAN BERHASIL DISETUJUI*\n\n` +
+      `🔖 Kode Booking: *${b.bookingCode}*\n` +
+      `👤 Pemohon: ${b.applicantName} (${b.applicantJabatan})\n` +
+      `📍 Tujuan: ${b.destinationName}\n` +
+      `📅 Berangkat: ${formatWaDate(b.departureDatetime)}\n` +
+      `📅 Kembali: ${formatWaDate(b.returnDatetime)}\n` +
+      (b.vehicle ? `🚙 Kendaraan: ${b.vehicle.name} (${b.vehicle.plateNumber})\n` : '') +
+      `\nNotifikasi resmi persetujuan telah otomatis dikirimkan ke WhatsApp pemohon (${b.applicantPhoneWa}).\n\n` +
+      `Terima kasih Bapak/Ibu ${approver.name || 'Pejabat Penyetuju'}. 🙏\n` +
+      `SIPKO | SMKN 1 Subang`
+    )
+    return
+  }
+
+  // JIKA PERINTAH TOLAK (2)
+  if (intention === 'REJECT') {
+    let targetCode: string | null = explicitBookingCode
+
+    if (!targetCode) {
+      if (pendingBookings.length === 0) {
+        await reply(
+          `ℹ️ *Tidak Ada Pengajuan Menunggu*\n\n` +
+          `Saat ini tidak ada permohonan peminjaman kendaraan yang sedang menunggu persetujuan.`
+        )
+        return
+      }
+
+      if (pendingBookings.length === 1) {
+        targetCode = pendingBookings[0].bookingCode
+      } else {
+        const optionsText = pendingBookings
+          .map(
+            (b, idx) =>
+              `${idx + 1}. *${b.bookingCode}* — ${b.applicantName} (${b.destinationName})`
+          )
+          .join('\n')
+
+        await reply(
+          `⚠️ *Terdapat ${pendingBookings.length} Pengajuan Menunggu:*\n\n` +
+          `${optionsText}\n\n` +
+          `Mohon sertakan Kode Booking dan Alasan Penolakan:\n` +
+          `👉 Balas: *2 [KODE_BOOKING] [Alasan]*\n` +
+          `Contoh: *2 ${pendingBookings[0].bookingCode} ${rejectionReason || 'Mobil dinas sedang diservis'}*`
+        )
+        return
+      }
+    }
+
+    // Alasan penolakan wajib
+    if (!rejectionReason) {
+      const targetBooking = pendingBookings.find((b) => b.bookingCode === targetCode)
+      await reply(
+        `⚠️ *Alasan Penolakan Wajib Diisi*\n\n` +
+        `Mohon sertakan alasan penolakan untuk pengajuan *${targetCode}*${targetBooking ? ` (Pemohon: ${targetBooking.applicantName})` : ''}.\n\n` +
+        `Contoh balasan:\n` +
+        `👉 *2 Mobil dinas sedang dipakai dinas luar*\n` +
+        `atau: *2 ${targetCode} Jadwal bertabrakan dengan agenda sekolah*`
+      )
+      return
+    }
+
+    // Eksekusi penolakan melalui service terpadu
+    const result = await processBookingApproval({
+      bookingCode: targetCode,
+      decision: 'REJECT',
+      notes: rejectionReason,
+      actor: approver,
+      source: 'WHATSAPP',
+    })
+
+    if (!result.success) {
+      await reply(`❌ *Penolakan Gagal*\n\n${result.error || 'Terjadi kendala saat memproses booking.'}`)
+      return
+    }
+
+    const b = result.booking
+    await reply(
+      `❌ *PENGAJUAN TELAH DITOLAK*\n\n` +
+      `🔖 Kode Booking: *${b.bookingCode}*\n` +
+      `👤 Pemohon: ${b.applicantName} (${b.applicantJabatan})\n` +
+      `📍 Tujuan: ${b.destinationName}\n` +
+      `📝 Alasan Penolakan: *${rejectionReason}*\n\n` +
+      `Notifikasi penolakan beserta alasan telah otomatis dikirimkan ke WhatsApp pemohon (${b.applicantPhoneWa}).\n\n` +
+      `SIPKO | SMKN 1 Subang`
+    )
+    return
+  }
+}

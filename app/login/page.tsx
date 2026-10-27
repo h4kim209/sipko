@@ -122,7 +122,7 @@ export default function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                   >
-                    {showPassword ? '🙈' : '👁️'}
+                    {showPassword ? '👁️' : '👁️'}
                   </button>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function LoginPage() {
                 className={`btn btn-primary btn-lg w-full${loading ? ' btn-loading' : ''}`}
                 disabled={loading}
               >
-                {loading ? 'Masuk...' : '🔐 Masuk'}
+                {loading ? 'Masuk...' : 'Masuk'}
               </button>
             </form>
 

@@ -66,7 +66,7 @@ export default function PengajuanPage() {
   const [showGeoDropdown, setShowGeoDropdown] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
 
-  const SCHOOL_ADDRESS = 'Jl. Arief Rahman Hakim No.40, Sukarahayu, Subang, Jawa Barat 41212'
+  const SCHOOL_ADDRESS = 'Jl. Arief Rahman Hakim No.35, Cigadung, Kec. Subang, Kabupaten Subang, Jawa Barat 41212'
 
   const [form, setForm] = useState<FormData>({
     applicantName: '',

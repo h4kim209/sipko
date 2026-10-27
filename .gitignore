@@ -5,7 +5,9 @@
 
 # Session WhatsApp (mengandung credential)
 wa-session/
+sipko-wa-session/
 /var/sipko/
+*.tsbuildinfo
 
 # Upload files
 uploads/

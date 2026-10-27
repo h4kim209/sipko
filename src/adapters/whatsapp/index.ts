@@ -127,15 +127,24 @@ SIPKO | SMKN 1 Subang`,
 
 ${data.nama_petugas ? `Yth. Bapak/Ibu ${data.nama_petugas},\n` : ''}Terdapat permohonan peminjaman kendaraan baru yang memerlukan persetujuan:
 
-👤 Pemohon: ${data.nama_pemohon}
+👤 Pemohon: *${data.nama_pemohon}*
 🪪 NIP: ${data.nip || '-'}
 💼 Jabatan: ${data.jabatan}${data.kendaraan ? `\n🚙 Kendaraan: ${data.kendaraan}` : ''}
 📅 Berangkat: ${data.waktu_pinjam}
 📅 Kembali: ${data.waktu_kembali}
 📍 Tujuan: ${data.tujuan}
-🔖 Kode Booking: ${data.kode_booking}
+🔖 Kode Booking: *${data.kode_booking}*
 
-Silakan buka dashboard untuk memberikan persetujuan:
+━━━━━━━━━━━━━━━━━━━━
+⚡ *RESPON CEPAT VIA WHATSAPP:*
+Bapak/Ibu dapat langsung membalas pesan ini tanpa login web:
+
+👉 Balas *1* untuk *SETUJU*
+👉 Balas *2 [Alasan]* untuk *TOLAK*
+Contoh penolakan: *2 Mobil dipakai dinas ke Disdik*
+━━━━━━━━━━━━━━━━━━━━
+
+Atau melalui dashboard web:
 ${data.app_url}
 
 SIPKO | SMKN 1 Subang`,

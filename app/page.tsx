@@ -181,7 +181,7 @@ export default function HomePage() {
             SIPKO — Sistem Peminjaman Kendaraan Operasional
           </div>
           <div style={{ fontSize: '0.875rem' }}>
-            SMKN 1 Subang | Jl. Arief Rahman Hakim No.40, Subang, Jawa Barat
+            SMKN 1 Subang | Jl. Arief Rahman Hakim No.35, Subang, Jawa Barat
           </div>
           <div style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
             © {new Date().getFullYear()} SMKN 1 Subang. All rights reserved.

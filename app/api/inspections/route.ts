@@ -134,6 +134,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Pastikan userId benar-benar ada di tabel User (hindari FK violation)
+    let submitterId: string | null = null
+    if (booking.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: booking.userId },
+        select: { id: true },
+      })
+      submitterId = user?.id ?? null
+    }
+
     const inspection = await prisma.vehicleInspection.create({
       data: {
         bookingId: booking.id,
@@ -143,7 +153,7 @@ export async function POST(request: NextRequest) {
         incidentNotes: inspectionType === 'POST' ? incidentNotes : null,
         fuelFilled,
         fuelNotes: inspectionType === 'POST' ? fuelNotes : null,
-        submittedById: booking.userId || null,
+        submittedById: submitterId,
         submittedAt: new Date(),
       },
     })
@@ -161,7 +171,7 @@ export async function POST(request: NextRequest) {
         filePath: speedoStored.relativePath,
         fileSize: speedoStored.sizeBytes,
         mimeType: speedoStored.mimeType,
-        uploadedById: booking.userId || null,
+        uploadedById: submitterId,
       },
     })
 
@@ -181,7 +191,7 @@ export async function POST(request: NextRequest) {
           filePath: stored.relativePath,
           fileSize: stored.sizeBytes,
           mimeType: stored.mimeType,
-          uploadedById: booking.userId || null,
+          uploadedById: submitterId,
         },
       })
     }
@@ -197,7 +207,7 @@ export async function POST(request: NextRequest) {
           filePath: fuelStored.relativePath,
           fileSize: fuelStored.sizeBytes,
           mimeType: fuelStored.mimeType,
-          uploadedById: booking.userId || null,
+          uploadedById: submitterId,
         },
       })
     }
