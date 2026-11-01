@@ -1831,22 +1831,57 @@ tbody td {
   }
 
   .admin-main {
-    margin-left: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   .sidebar-toggle {
     display: block;
   }
 
+  .admin-header {
+    padding: 0 var(--space-4);
+    height: 60px;
+  }
+
   .admin-content {
+    padding: var(--space-4) var(--space-3);
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .dashboard-stat-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .dashboard-summary-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .stat-card {
     padding: var(--space-4);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-4);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.8rem;
   }
 
   .grid-2 {
     grid-template-columns: 1fr;
-  }
-
-  .admin-header {
-    padding: 0 var(--space-4);
   }
 }
