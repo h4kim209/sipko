@@ -48,31 +48,42 @@ export function AdminSidebar({ userName, userRole }: Props) {
     }
   }, [])
 
+  // Otomatis tutup sidebar ketika rute/halaman berpindah
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   return (
     <>
-      {/* Overlay mobile */}
+      {/* Overlay mobile (z-index 990, berada DI BAWAH sidebar z-index 1000) */}
       {open && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 99,
-          }}
+          className="sidebar-overlay"
           onClick={() => setOpen(false)}
+          aria-label="Tutup menu sidebar"
         />
       )}
 
       <aside className={`sidebar${open ? ' open' : ''}`}>
-        <Link href="/admin/dashboard" className="sidebar-logo">
-          <div className="sidebar-logo-icon">SK</div>
-          <div className="sidebar-logo-text">
-            <span className="sidebar-logo-title">SIPKO</span>
-            <span className="sidebar-logo-subtitle">SMKN 1 Subang</span>
-          </div>
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <Link href="/admin/dashboard" className="sidebar-logo" style={{ borderBottom: 'none', flex: 1 }} onClick={() => setOpen(false)}>
+            <div className="sidebar-logo-icon">SK</div>
+            <div className="sidebar-logo-text">
+              <span className="sidebar-logo-title">SIPKO</span>
+              <span className="sidebar-logo-subtitle">SMKN 1 Subang</span>
+            </div>
+          </Link>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setOpen(false)}
+            aria-label="Tutup sidebar"
+          >
+            ✕
+          </button>
+        </div>
 
-        <nav>
+        <nav style={{ flex: 1, overflowY: 'auto' }}>
           <ul className="sidebar-nav">
             {MENU_ITEMS.map((item, i) => {
               if ('section' in item) {
@@ -85,7 +96,12 @@ export function AdminSidebar({ userName, userRole }: Props) {
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
               return (
                 <li key={item.href} className={`sidebar-nav-item${isActive ? ' active' : ''}`}>
-                  <Link href={item.href!} onClick={() => setOpen(false)}>
+                  <Link
+                    href={item.href!}
+                    onClick={() => {
+                      setOpen(false)
+                    }}
+                  >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
                   </Link>

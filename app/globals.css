@@ -1283,12 +1283,13 @@ tbody td {
   }
 
   .sidebar {
-    transform: translateX(-260px);
+    transform: translateX(-100%);
   }
 
   .sidebar.open {
     transform: translateX(0);
     width: 260px;
+    z-index: 1000;
   }
 
   .admin-main {
@@ -1351,9 +1352,39 @@ tbody td {
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 50;
+  z-index: 1000;
   overflow-y: auto;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 990;
+  cursor: pointer;
+}
+
+.sidebar-close-btn {
+  display: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: var(--space-4);
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-logo {
@@ -1410,6 +1441,13 @@ tbody td {
   font-weight: 500;
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+  user-select: none;
+}
+
+.sidebar-nav-item a * {
+  pointer-events: none;
 }
 
 .sidebar-nav-item a:hover {
@@ -1748,10 +1786,18 @@ tbody td {
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 1000;
   }
 
   .sidebar.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
+    z-index: 1000 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-close-btn {
+    display: flex;
   }
 
   .admin-main {
