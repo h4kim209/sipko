@@ -45,7 +45,7 @@ export default function LoginPage() {
       <nav className="public-nav">
         <div className="public-nav-inner">
           <Link href="/" className="public-nav-logo">
-            <div className="nav-logo-icon">SK</div>
+            <img src="/logo-circle.png" alt="SIPKO Logo" className="nav-logo-img" />
             <div>
               <div className="nav-logo-title">SIPKO</div>
               <div className="nav-logo-subtitle">SMKN 1 Subang</div>
@@ -66,21 +66,17 @@ export default function LoginPage() {
         <div className="card animate-slide-up" style={{ maxWidth: '420px', width: '100%' }}>
           <div className="card-body" style={{ padding: '2.5rem 2rem' }}>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-navy-600))',
-                borderRadius: 'var(--radius-xl)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1rem',
-                fontSize: '1.5rem',
-                color: 'white',
-                fontWeight: 900,
-              }}>
-                SK
-              </div>
+              <img
+                src="/logo-circle.png"
+                alt="SIPKO Logo"
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  margin: '0 auto 1rem',
+                  display: 'block',
+                  objectFit: 'contain',
+                }}
+              />
               <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>Masuk ke SIPKO</h1>
               <p style={{ color: 'var(--color-gray-500)', fontSize: '0.875rem' }}>
                 Hanya untuk Admin dan Pejabat Penyetuju

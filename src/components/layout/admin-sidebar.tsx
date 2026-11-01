@@ -67,7 +67,7 @@ export function AdminSidebar({ userName, userRole }: Props) {
       <aside className={`sidebar${open ? ' open' : ''}`}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <Link href="/admin/dashboard" className="sidebar-logo" style={{ borderBottom: 'none', flex: 1 }} onClick={() => setOpen(false)}>
-            <div className="sidebar-logo-icon">SK</div>
+            <img src="/logo-circle.png" alt="SIPKO Logo" className="sidebar-logo-img" />
             <div className="sidebar-logo-text">
               <span className="sidebar-logo-title">SIPKO</span>
               <span className="sidebar-logo-subtitle">SMKN 1 Subang</span>
