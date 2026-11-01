@@ -28,6 +28,7 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Editor
+# Editor & Office temp
 .vscode/settings.json
 .idea/
+~$*

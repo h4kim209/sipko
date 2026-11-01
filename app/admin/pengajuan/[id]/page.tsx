@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { requireAuth } from '@/lib/auth-guard'
 import { ApprovalActions } from '@/components/admin/approval-actions'
+import { CancelBookingAction } from '@/components/admin/cancel-booking-action'
 import { InspectionGallery } from '@/components/admin/inspection-gallery'
 
 export const metadata: Metadata = {
@@ -235,6 +236,24 @@ export default async function BookingDetailPage({
               </div>
             )}
             <ApprovalActions bookingCode={booking.bookingCode} bookingId={booking.id} />
+          </div>
+        </div>
+      )}
+
+      {/* Pembatalan Pasca Persetujuan */}
+      {['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL', 'SIAP_BERANGKAT'].includes(booking.status) && (
+        <div className="card" style={{ marginBottom: 'var(--space-6)', borderColor: '#fca5a5', background: '#fffafa' }}>
+          <div className="card-header" style={{ borderBottomColor: '#fecaca', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ color: '#991b1b', margin: 0 }}>⚠️ Pembatalan Booking / Cabut Persetujuan</h3>
+            <span className="badge status-approved" style={{ fontSize: 'var(--font-size-xs)' }}>
+              Status: {STATUS_LABELS[booking.status] || booking.status}
+            </span>
+          </div>
+          <div className="card-body">
+            <p style={{ fontSize: 'var(--font-size-sm)', color: '#7f1d1d', marginBottom: 'var(--space-3)' }}>
+              Jika terjadi kesalahan persetujuan atau perubahan agenda dinas mendadak, Anda dapat membatalkan booking ini sebelum armada berangkat. Sistem akan mengosongkan alokasi kendaraan dan mengirimkan notifikasi resmi ke WhatsApp pemohon.
+            </p>
+            <CancelBookingAction bookingCode={booking.bookingCode} bookingId={booking.id} currentStatus={booking.status} />
           </div>
         </div>
       )}

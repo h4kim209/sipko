@@ -3,7 +3,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { normalizePhone, jidToPhoneMap } from './baileys-adapter'
-import { processBookingApproval, formatWaDate } from '@/lib/booking-approval-service'
+import { processBookingApproval, cancelBooking, formatWaDate } from '@/lib/booking-approval-service'
 
 // Cache untuk mendeteksi & mencegah duplikasi pesan yang diproses ulang
 const processedMessageIds = new Set<string>()
@@ -201,8 +201,9 @@ async function processApproverCommand(
   const explicitBookingCode = bookingCodeMatch ? bookingCodeMatch[1].toUpperCase() : null
 
   // 2. Klasifikasi intensi perintah
-  let intention: 'APPROVE' | 'REJECT' | 'STATUS' | 'HELP' | 'UNKNOWN' = 'UNKNOWN'
+  let intention: 'APPROVE' | 'REJECT' | 'STATUS' | 'HELP' | 'CANCEL' | 'UNKNOWN' = 'UNKNOWN'
   let rejectionReason: string | null = null
+  let cancelReason: string | null = null
 
   if (
     ['status', 'cek', 'info', 'list', 'antrian', 'daftar', 'pengajuan'].includes(lower) ||
@@ -213,6 +214,24 @@ async function processApproverCommand(
     intention = 'STATUS'
   } else if (['bantuan', 'help', 'menu', 'panduan'].includes(lower) || lower === '/help' || lower === '/menu') {
     intention = 'HELP'
+  } else if (
+    lower === 'batal' ||
+    lower.startsWith('batal ') ||
+    lower.startsWith('batal-') ||
+    lower.startsWith('batal:') ||
+    lower === 'cancel' ||
+    lower.startsWith('cancel ') ||
+    lower.startsWith('cancel-') ||
+    lower.startsWith('cancel:')
+  ) {
+    intention = 'CANCEL'
+    let remainder = trimmed
+    remainder = remainder.replace(/^(batal[\s\-:]*|cancel[\s\-:]*)/i, '').trim()
+    if (explicitBookingCode) {
+      remainder = remainder.replace(new RegExp(explicitBookingCode, 'i'), '').trim()
+    }
+    remainder = remainder.replace(/^[\-:,]\s*/, '').trim()
+    cancelReason = remainder || null
   } else if (
     lower === '1' ||
     lower.startsWith('1 ') ||
@@ -319,7 +338,11 @@ async function processApproverCommand(
       `   Untuk *MENOLAK* pengajuan (alasan wajib diisi).\n` +
       `   Contoh: *2 Mobil dipakai dinas ke Disdik*\n` +
       `   atau: *2 SIP-2Z6C9YRZ Jadwal bentrok*\n\n` +
-      `3️⃣ *STATUS*\n` +
+      `3️⃣ *BATAL [Alasan]* atau *BATAL [KODE_BOOKING] [Alasan]*\n` +
+      `   Untuk *MEMBATALKAN / MENCABUT* persetujuan jika salah balas 1.\n` +
+      `   Contoh: *BATAL Salah pencet setuju*\n` +
+      `   atau: *BATAL SIP-2Z6C9YRZ Dibatalkan kepala sekolah*\n\n` +
+      `4️⃣ *STATUS*\n` +
       `   Melihat daftar pengajuan yang sedang menunggu persetujuan.\n\n` +
       `🌐 Buka web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
     )
@@ -459,6 +482,88 @@ async function processApproverCommand(
       `📍 Tujuan: ${b.destinationName}\n` +
       `📝 Alasan Penolakan: *${rejectionReason}*\n\n` +
       `Notifikasi penolakan beserta alasan telah otomatis dikirimkan ke WhatsApp pemohon (${b.applicantPhoneWa}).\n\n` +
+      `SIPKO | SMKN 1 Subang`
+    )
+    return
+  }
+
+  // JIKA PERINTAH BATAL (CANCEL)
+  if (intention === 'CANCEL') {
+    let targetCode: string | null = explicitBookingCode
+
+    if (!targetCode) {
+      // Cari booking yang DISETUJUI atau MENUNGGU_PERSETUJUAN (ambil yang aktif dalam 48 jam)
+      const cancellableBookings = await prisma.booking.findMany({
+        where: {
+          status: { in: ['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL', 'MENUNGGU_PERSETUJUAN'] },
+          deletedAt: null,
+          createdAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) },
+        },
+        include: { vehicle: true },
+        orderBy: { updatedAt: 'desc' },
+      })
+
+      if (cancellableBookings.length === 0) {
+        await reply(
+          `ℹ️ *Tidak Ada Pengajuan yang Dapat Dibatalkan*\n\n` +
+          `Saat ini tidak ada permohonan peminjaman aktif yang berada dalam status disetujui / menunggu.`
+        )
+        return
+      }
+
+      if (cancellableBookings.length === 1) {
+        targetCode = cancellableBookings[0].bookingCode
+      } else {
+        const optionsText = cancellableBookings
+          .map(
+            (b, idx) =>
+              `${idx + 1}. *${b.bookingCode}* [${b.status}] — ${b.applicantName} (${b.destinationName})`
+          )
+          .join('\n')
+
+        await reply(
+          `⚠️ *Terdapat beberapa pengajuan aktif:*\n\n` +
+          `${optionsText}\n\n` +
+          `Mohon tentukan kode booking yang ingin dibatalkan:\n` +
+          `👉 Balas: *BATAL [KODE_BOOKING] [Alasan]*\n` +
+          `Contoh: *BATAL ${cancellableBookings[0].bookingCode} ${cancelReason || 'Salah setujui' }*`
+        )
+        return
+      }
+    }
+
+    if (!cancelReason) {
+      await reply(
+        `⚠️ *Alasan Pembatalan Wajib Diisi*\n\n` +
+        `Mohon sertakan alasan pembatalan untuk booking *${targetCode}*.\n\n` +
+        `Contoh balasan:\n` +
+        `👉 *BATAL ${targetCode} Tidak sengaja membalas 1*\n` +
+        `atau: *BATAL ${targetCode} Jadwal dinas mendadak berubah*`
+      )
+      return
+    }
+
+    const result = await cancelBooking({
+      bookingCode: targetCode,
+      reason: cancelReason,
+      actor: approver,
+      source: 'WHATSAPP',
+    })
+
+    if (!result.success) {
+      await reply(`❌ *Pembatalan Gagal*\n\n${result.error || 'Terjadi kendala saat membatalkan booking.'}`)
+      return
+    }
+
+    const b = result.booking
+    await reply(
+      `⚠️ *PEMINJAMAN BERHASIL DIBATALKAN*\n\n` +
+      `🔖 Kode Booking: *${b.bookingCode}*\n` +
+      `👤 Pemohon: ${b.applicantName}\n` +
+      `📍 Tujuan: ${b.destinationName}\n` +
+      `📝 Alasan: *${cancelReason}*\n\n` +
+      `Status peminjaman telah diubah menjadi *DIBATALKAN*.\n` +
+      `Notifikasi pembatalan dan pembebasan armada dinas telah otomatis dikirimkan ke WhatsApp pemohon (${b.applicantPhoneWa}). 🙏\n\n` +
       `SIPKO | SMKN 1 Subang`
     )
     return

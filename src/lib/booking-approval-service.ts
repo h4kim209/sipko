@@ -222,9 +222,161 @@ export async function processBookingApproval(params: ProcessApprovalParams): Pro
     console.error('[WA Approval Notify Error]', waErr)
   }
 
-  return {
-    success: true,
-    newStatus,
-    booking,
+    return {
+      success: true,
+      newStatus,
+      booking,
+    }
   }
-}
+
+  export interface CancelBookingParams {
+    bookingCode?: string
+    bookingId?: string
+    reason: string
+    actor: ApprovalActor
+    source?: 'WEB' | 'WHATSAPP'
+  }
+
+  export interface CancelBookingResult {
+    success: boolean
+    error?: string
+    statusCode?: number
+    booking?: any
+    newStatus?: string
+  }
+
+  export async function cancelBooking(params: CancelBookingParams): Promise<CancelBookingResult> {
+    const { bookingCode, bookingId, reason, actor, source = 'WEB' } = params
+
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : ''
+    if (!trimmedReason) {
+      return { success: false, error: 'Alasan pembatalan wajib diisi', statusCode: 400 }
+    }
+
+    // Cari booking
+    const booking = await prisma.booking.findFirst({
+      where: {
+        ...(bookingCode ? { bookingCode: String(bookingCode).toUpperCase() } : {}),
+        ...(bookingId ? { id: bookingId } : {}),
+        deletedAt: null,
+      },
+      include: {
+        vehicle: true,
+      },
+    })
+
+    if (!booking) {
+      return { success: false, error: `Booking ${bookingCode || bookingId || ''} tidak ditemukan`, statusCode: 404 }
+    }
+
+    // Validasi status: hanya dapat dibatalkan jika belum berjalan (belum SEDANG_DIGUNAKAN)
+    const cancellableStatuses = ['MENUNGGU_PERSETUJUAN', 'DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL', 'SIAP_BERANGKAT']
+    if (!cancellableStatuses.includes(booking.status)) {
+      return {
+        success: false,
+        error: `Booking ${booking.bookingCode} tidak dapat dibatalkan karena status saat ini adalah "${booking.status}".`,
+        statusCode: 400,
+      }
+    }
+
+    const prevStatus = booking.status
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const latestBooking = await tx.booking.findUnique({
+          where: { id: booking.id },
+          select: { status: true },
+        })
+        if (!latestBooking || !cancellableStatuses.includes(latestBooking.status)) {
+          throw new Error('STATUS_CHANGED')
+        }
+
+        const noteText = `DIBATALKAN (${source}): ${trimmedReason}`
+
+        await tx.booking.update({
+          where: { id: booking.id },
+          data: {
+            status: 'DIBATALKAN',
+            approvalNotes: booking.approvalNotes ? `${booking.approvalNotes}\n[${noteText}]` : noteText,
+          },
+        })
+
+        await tx.bookingStatusHistory.create({
+          data: {
+            bookingId: booking.id,
+            actorId: actor.id,
+            actorName: actor.name ?? 'Administrator/Penyetuju',
+            actorRole: actor.role,
+            fromStatus: prevStatus,
+            toStatus: 'DIBATALKAN',
+            reason: trimmedReason,
+            notes: noteText,
+          },
+        })
+      })
+    } catch (txErr) {
+      if (txErr instanceof Error && txErr.message === 'STATUS_CHANGED') {
+        return {
+          success: false,
+          error: 'Status booking sudah berubah oleh aksi lain.',
+          statusCode: 409,
+        }
+      }
+      throw txErr
+    }
+
+    // Catat Audit Log
+    await writeAuditLog({
+      action: AUDIT_ACTIONS.BOOKING_CANCELLED,
+      entityType: 'booking',
+      entityId: booking.id,
+      actorId: actor.id,
+      actorName: actor.name,
+      actorRole: actor.role,
+      oldValue: { status: prevStatus },
+      newValue: { status: 'DIBATALKAN', reason: trimmedReason, source },
+    })
+
+    // Kirim Notifikasi WhatsApp ke Pemohon
+    try {
+      const wa = getWhatsAppAdapter()
+      const message = WA_TEMPLATES.bookingCancelled({
+        nama: booking.applicantName,
+        kode_booking: booking.bookingCode,
+        waktu_pinjam: formatWaDate(booking.departureDatetime),
+        tujuan: booking.destinationName,
+        alasan: trimmedReason,
+        dibatalkan_oleh: actor.role === 'APPROVER' ? 'Pejabat Penyetuju / Kepala Sekolah' : 'Administrator Sarpras',
+      })
+
+      const notif = await prisma.notification.create({
+        data: {
+          bookingId: booking.id,
+          recipientPhone: booking.applicantPhoneWa,
+          eventType: 'BOOKING_REJECTED',
+          messageBody: message,
+          status: 'QUEUED',
+        },
+      })
+
+      const sendRes = await wa.sendMessage(booking.applicantPhoneWa, message)
+      await prisma.notification.update({
+        where: { id: notif.id },
+        data: {
+          status: sendRes.success ? 'SENT' : 'FAILED',
+          providerMessageId: sendRes.providerMessageId,
+          attemptCount: 1,
+          lastAttemptAt: new Date(),
+          errorMessage: sendRes.error,
+        },
+      })
+    } catch (waErr) {
+      console.error('[WA Cancel Notify Error]', waErr)
+    }
+
+    return {
+      success: true,
+      newStatus: 'DIBATALKAN',
+      booking,
+    }
+  }

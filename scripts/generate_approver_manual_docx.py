@@ -276,10 +276,47 @@ def create_approver_manual():
         title="PENTING TERKAIT PENOLAKAN"
     )
 
-    add_h2("3. Tabel Ringkasan Format Balasan WhatsApp")
+    add_h2("3. Mencabut / Membatalkan Persetujuan (Ketik BATAL [Alasan])")
+    p_batal = doc.add_paragraph()
+    p_batal.add_run(
+        "Apabila Bapak/Ibu tidak sengaja membalas angka 1 padahal ingin menolak, atau agenda sekolah mendadak berubah "
+        "sehingga kendaraan harus dialihkan, Bapak/Ibu dapat mencabut persetujuan seketika cukup dengan membalas pesan WhatsApp:"
+    )
+
+    p_ex_batal = doc.add_paragraph(style='List Bullet')
+    p_ex_batal.add_run("Format balasan: ").font.color.rgb = COLOR_DARK
+    p_ex_batal.add_run("BATAL [Alasan]").bold = True
+    p_ex_batal.add_run(" atau ")
+    p_ex_batal.add_run("BATAL [KODE_BOOKING] [Alasan]").bold = True
+
+    p_ex_batal2 = doc.add_paragraph(style='List Bullet')
+    p_ex_batal2.add_run("Contoh 1: ").font.color.rgb = COLOR_DARK
+    p_ex_batal2.add_run("BATAL Tidak sengaja tertekan setuju, mobil harus diservis").bold = True
+
+    p_ex_batal3 = doc.add_paragraph(style='List Bullet')
+    p_ex_batal3.add_run("Contoh 2: ").font.color.rgb = COLOR_DARK
+    p_ex_batal3.add_run("BATAL SIP-44ZVTGUA Agenda rapat mendadak di sekolah").bold = True
+
+    p_batal_eff = doc.add_paragraph()
+    p_batal_eff.add_run("Efek otomatis saat perintah pembatalan dikirim:")
+    
+    p_batal_b1 = doc.add_paragraph(style='List Bullet')
+    p_batal_b1.add_run("Status pengajuan di database langsung diubah menjadi ")
+    p_batal_b1.add_run("DIBATALKAN").bold = True
+    p_batal_b1.add_run(".")
+
+    p_batal_b2 = doc.add_paragraph(style='List Bullet')
+    p_batal_b2.add_run("Jadwal kendaraan dinas tersebut seketika ")
+    p_batal_b2.add_run("dibebaskan kembali").bold = True
+    p_batal_b2.add_run(" sehingga guru/staf lain dapat mengajukannya.")
+
+    p_batal_b3 = doc.add_paragraph(style='List Bullet')
+    p_batal_b3.add_run("Bot WhatsApp otomatis mengirim notifikasi resmi pembatalan beserta alasan ke nomor WhatsApp pemohon.")
+
+    add_h2("4. Tabel Ringkasan Format Balasan WhatsApp")
     
     # Table of Commands
-    table_cmd = doc.add_table(rows=5, cols=3)
+    table_cmd = doc.add_table(rows=6, cols=3)
     table_cmd.alignment = WD_TABLE_ALIGNMENT.CENTER
     table_cmd.autofit = False
 
@@ -304,6 +341,7 @@ def create_approver_manual():
     rows_data = [
         ("1  atau  SETUJU", "1\natau  SETUJU", "Menyetujui permohonan peminjaman. Notifikasi persetujuan dikirim ke pemohon."),
         ("2 [Alasan]", "2 Mobil dipakai dinas ke Disdik", "Menolak permohonan dan meneruskan alasan resmi ke pemohon via WhatsApp."),
+        ("BATAL [Alasan]", "BATAL Salah pencet setuju", "Mencabut/membatalkan persetujuan booking yang sudah disetujui dan membebaskan jadwal armada."),
         ("STATUS", "STATUS", "Bot menampilkan daftar seluruh peminjaman yang sedang menunggu persetujuan."),
         ("BANTUAN", "BANTUAN", "Bot mengirimkan ringkasan petunjuk format balasan persetujuan WhatsApp.")
     ]
@@ -374,6 +412,13 @@ def create_approver_manual():
     p_web4.add_run("[ Tolak ]").bold = True
     p_web4.add_run(" untuk menolak (masukkan alasan pada jendela konfirmasi yang muncul).")
 
+    p_web5 = doc.add_paragraph(style='List Bullet')
+    p_web5.add_run("Untuk membatalkan persetujuan yang sudah terlanjur diberikan, klik tombol merah ")
+    p_web5.add_run("[ ⚠️ Batalkan ]").bold = True
+    p_web5.add_run(" pada tabel daftar atau buka halaman Detail booking dan gunakan form ")
+    p_web5.add_run("Batalkan Persetujuan / Cabut Booking").bold = True
+    p_web5.add_run(" dengan menyertakan alasan pembatalan.")
+
     # =========================================================================
     # BAB IV: KEAMANAN & PRIVASI NOMOR PEJABAT
     # =========================================================================
@@ -417,7 +462,7 @@ def create_approver_manual():
 
     faqs = [
         ("Bagaimana jika saya tidak sengaja membalas '1' padahal ingin menolak?",
-         "Bapak/Ibu dapat segera menghubungi Administrator Sarpras atau membuka Web Dashboard pada menu 'Pengajuan & Persetujuan' untuk membatalkan status persetujuan."),
+         "Bapak/Ibu memiliki 2 cara mudah yang sudah langsung aktif: (1) Cukup balas chat bot WhatsApp dengan mengetik: BATAL [Alasan] (contoh: BATAL Salah setujui, mobil dipakai dinas lain). Sistem seketika membatalkan peminjaman, membebaskan jadwal armada, dan mengirim notifikasi pembatalan ke WhatsApp pemohon. (2) Atau buka Web Dashboard pada menu 'Pengajuan & Persetujuan' lalu klik tombol [ Batalkan ] untuk mencabut persetujuan."),
         ("Apakah saya harus selalu membuka website untuk mengecek permohonan baru?",
          "Tidak perlu sama sekali. Sistem SIPKO dirancang agar Bapak/Ibu Kepala Sekolah cukup memantau dan membalas melalui aplikasi WhatsApp yang sudah biasa digunakan sehari-hari."),
         ("Berapa lama batas waktu bagi Pejabat Penyetuju untuk memberikan keputusan?",
@@ -446,8 +491,14 @@ def create_approver_manual():
     # Output filename
     output_filename = "PANDUAN_OPERASIONAL_KEPALA_SEKOLAH_SIPKO_SMKN1_SUBANG.docx"
     output_path = os.path.join(base_dir, output_filename)
-    doc.save(output_path)
-    print(f"[OK] Dokumen berhasil dibuat: {output_path}")
+    try:
+        doc.save(output_path)
+        print(f"[OK] Dokumen berhasil dibuat: {output_path}")
+    except PermissionError:
+        alt_filename = "PANDUAN_OPERASIONAL_KEPALA_SEKOLAH_SIPKO_SMKN1_SUBANG_TERBARU.docx"
+        alt_path = os.path.join(base_dir, alt_filename)
+        doc.save(alt_path)
+        print(f"[OK] File sedang dibuka di Word. Dokumen terbaru disimpan di: {alt_path}")
 
 if __name__ == "__main__":
     create_approver_manual()

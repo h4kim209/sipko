@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ApprovalActions } from '@/components/admin/approval-actions'
+import { CancelBookingAction } from '@/components/admin/cancel-booking-action'
 
 export const metadata: Metadata = { title: 'Pengajuan & Persetujuan' }
 export const dynamic = 'force-dynamic'
@@ -152,9 +153,14 @@ export default async function PengajuanListPage() {
                     {b.status === 'MENUNGGU_PERSETUJUAN' ? (
                       <ApprovalActions bookingCode={b.bookingCode} bookingId={b.id} />
                     ) : (
-                      <Link href={`/admin/pengajuan/${b.id}`} className="btn btn-secondary btn-sm">
-                        Detail
-                      </Link>
+                      <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+                        <Link href={`/admin/pengajuan/${b.id}`} className="btn btn-secondary btn-sm">
+                          Detail
+                        </Link>
+                        {['DISETUJUI', 'MENUNGGU_PEMERIKSAAN_AWAL'].includes(b.status) && (
+                          <CancelBookingAction bookingCode={b.bookingCode} bookingId={b.id} currentStatus={b.status} compact />
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

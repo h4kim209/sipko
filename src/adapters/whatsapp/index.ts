@@ -189,6 +189,27 @@ Bapak/Ibu ${data.nama}, pengajuan ${data.kode_booking} belum dapat disetujui.
 Terima kasih.
 SIPKO | SMKN 1 Subang`,
 
+  bookingCancelled: (data: {
+    nama: string
+    kode_booking: string
+    waktu_pinjam: string
+    tujuan: string
+    alasan: string
+    dibatalkan_oleh?: string
+  }) => `SIPKO — Peminjaman Dibatalkan ⚠️
+
+Assalamu'alaikum Bapak/Ibu ${data.nama},
+
+Peminjaman kendaraan operasional dengan kode *${data.kode_booking}* telah DIBATALKAN oleh ${data.dibatalkan_oleh || 'pihak pengelola/penyetuju'}.
+
+📅 Jadwal: ${data.waktu_pinjam}
+📍 Tujuan: ${data.tujuan}
+📝 Alasan: ${data.alasan}
+
+Alokasi jadwal kendaraan tersebut telah dibebaskan kembali. Apabila ada pertanyaan, silakan hubungi tim Sarpras SMKN 1 Subang.
+
+SIPKO | SMKN 1 Subang`,
+
   returnEvidenceReceived: (data: {
     nama: string
     kode_booking: string
