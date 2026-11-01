@@ -1473,10 +1473,13 @@ tbody td {
 /* Admin main area */
 .admin-main {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   margin-left: 260px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .admin-header {
@@ -1491,14 +1494,38 @@ tbody td {
   top: 0;
   z-index: 20;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .admin-content {
   flex: 1;
   padding: var(--space-6);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .sidebar-toggle { display: none; }
+
+/* Dashboard Grids */
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  width: 100%;
+}
+
+.dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+  width: 100%;
+}
 
 /* Page header */
 .page-header {
