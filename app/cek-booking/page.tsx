@@ -326,7 +326,7 @@ export default function CekBookingPage() {
       <nav className="public-nav">
         <div className="public-nav-inner">
           <Link href="/" className="public-nav-logo">
-            <div className="nav-logo-icon">SK</div>
+            <img src="/logo-circle.png" alt="SIPKO Logo" className="nav-logo-img" />
             <div>
               <div className="nav-logo-title">SIPKO</div>
               <div className="nav-logo-subtitle">SMKN 1 Subang</div>
