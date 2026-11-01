@@ -216,7 +216,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
+      <div className="dashboard-stat-grid">
         <Link href="/admin/pengajuan" style={{ textDecoration: 'none' }}>
           <div className="stat-card">
             <div className="stat-icon teal">📝</div>
@@ -275,7 +275,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Ringkasan bulan ini */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
+      <div className="dashboard-summary-grid">
         <div className="card">
           <div className="card-body" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, color: 'var(--color-primary-600)' }}>{totalBookings}</div>
