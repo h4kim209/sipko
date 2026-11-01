@@ -66,6 +66,9 @@ export function clearSessionDir(dir: string) {
   }
 }
 
+/** Cache pemetaan JID (@lid atau @s.whatsapp.net) ke nomor HP asli */
+export const jidToPhoneMap = new Map<string, string>()
+
 /** Normalisasi nomor Indonesia: 0812.. / +62812.. / 62812.. -> 62812.. */
 export function normalizePhone(raw: string): string {
   let digits = raw.replace(/\D/g, '')
@@ -321,6 +324,13 @@ export class BaileysWhatsAppAdapter implements WhatsAppAdapter {
       const cleanPhone = normalizePhone(phoneNumber)
       const jid = `${cleanPhone}@s.whatsapp.net`
       const result = await container.connection.sock.sendMessage(jid, { text: message })
+
+      if (result?.key?.remoteJid) {
+        jidToPhoneMap.set(result.key.remoteJid, cleanPhone)
+        jidToPhoneMap.set(result.key.remoteJid.split('@')[0], cleanPhone)
+      }
+      jidToPhoneMap.set(jid, cleanPhone)
+      jidToPhoneMap.set(cleanPhone, cleanPhone)
 
       return {
         success: true,
