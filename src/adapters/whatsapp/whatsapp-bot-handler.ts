@@ -69,10 +69,30 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
 
       // Normalisasi nomor pengirim
       const rawNumber = remoteJid.split('@')[0]
-      const cleanSender = normalizePhone(rawNumber)
-      if (!cleanSender) continue
+      let cleanSender = normalizePhone(rawNumber)
 
-      console.log(`[WA Bot] Pesan masuk dari ${cleanSender}: "${rawText}"`)
+      // 1. Cek dari jidToPhoneMap (pemetaan in-memory dari notifikasi yang baru dikirim ke approver)
+      const cachedPhone = jidToPhoneMap.get(remoteJid) || jidToPhoneMap.get(rawNumber)
+      if (cachedPhone) {
+        cleanSender = cachedPhone
+      }
+
+      // 2. Jika JID berakhiran @lid, coba ambil nomor asli via Baileys Signal Repository LID mapping
+      if (remoteJid.endsWith('@lid')) {
+        try {
+          const pn = await sock.signalRepository?.lidMapping?.getPNForLID?.(remoteJid)
+          if (pn) {
+            cleanSender = normalizePhone(pn.split('@')[0])
+            jidToPhoneMap.set(remoteJid, cleanSender)
+            jidToPhoneMap.set(rawNumber, cleanSender)
+            console.log(`[WA Bot] LID ${remoteJid} berhasil di-resolve ke nomor HP: ${cleanSender}`)
+          }
+        } catch (e) {
+          console.warn('[WA Bot] Gagal getPNForLID:', e)
+        }
+      }
+
+      console.log(`[WA Bot] Pesan masuk dari ${cleanSender} (raw: ${remoteJid}): "${rawText}"`)
 
       // Helper untuk membalas pesan (quote chat)
       const reply = async (text: string) => {
@@ -83,7 +103,7 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
         }
       }
 
-      // Cari user pejabat penyetuju di database
+      // 3. Cari user pejabat penyetuju di database
       let approver = await prisma.user.findFirst({
         where: {
           phoneWa: {
@@ -92,6 +112,7 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
               '0' + cleanSender.slice(2),
               '+' + cleanSender,
               '+62' + cleanSender.slice(2),
+              rawNumber,
             ],
           },
           role: { in: ['APPROVER', 'SUPER_ADMIN', 'ADMIN'] },
@@ -100,8 +121,8 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
         },
       })
 
+      // 4. Fallback: Cari di semua user pejabat penyetuju aktif
       if (!approver) {
-        // Fallback pencarian fleksibel nomor jika tersimpan dengan strip/spasi
         const candidates = await prisma.user.findMany({
           where: {
             role: { in: ['APPROVER', 'SUPER_ADMIN', 'ADMIN'] },
@@ -110,11 +131,51 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
             phoneWa: { not: null },
           },
         })
-        approver = candidates.find((u) => u.phoneWa && normalizePhone(u.phoneWa) === cleanSender) || null
+        approver =
+          candidates.find((u) => {
+            if (!u.phoneWa) return false
+            const norm = normalizePhone(u.phoneWa)
+            return norm === cleanSender || u.phoneWa.includes(cleanSender) || cleanSender.includes(norm)
+          }) || null
       }
 
-      // Jika nomor pengirim BUKAN pejabat penyetuju / admin, abaikan sepenuhnya (SILENT MODE)
-      // agar tidak mengganggu percakapan lain karena nomor WhatsApp ini digunakan juga untuk komunikasi lain
+      // 5. Fallback Cerdas untuk @lid: Jika pesan berasal dari @lid dan ada pengajuan yang menunggu persetujuan
+      if (!approver && remoteJid.endsWith('@lid')) {
+        // Ambil notifikasi persetujuan terakhir yang dikirim ke approver dalam 48 jam terakhir
+        const recentNotif = await prisma.notification.findFirst({
+          where: {
+            eventType: 'BOOKING_CREATED_ADMIN',
+            status: 'SENT',
+            createdAt: { gte: new Date(Date.now() - 48 * 3600 * 1000) },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        if (recentNotif && recentNotif.recipientPhone) {
+          const normRecip = normalizePhone(recentNotif.recipientPhone)
+          const matchedUser = await prisma.user.findFirst({
+            where: {
+              phoneWa: {
+                in: [normRecip, '0' + normRecip.slice(2), '+' + normRecip, recentNotif.recipientPhone],
+              },
+              role: { in: ['APPROVER', 'SUPER_ADMIN', 'ADMIN'] },
+              isActive: true,
+              deletedAt: null,
+            },
+          })
+
+          if (matchedUser) {
+            approver = matchedUser
+            jidToPhoneMap.set(remoteJid, normalizePhone(matchedUser.phoneWa || normRecip))
+            jidToPhoneMap.set(rawNumber, normalizePhone(matchedUser.phoneWa || normRecip))
+            console.log(
+              `[WA Bot] Berhasil memetakan @lid ${remoteJid} ke Pejabat Penyetuju "${matchedUser.name}" via notifikasi terakhir`
+            )
+          }
+        }
+      }
+
+      // Jika pengirim BUKAN pejabat penyetuju / admin, abaikan sepenuhnya (SILENT MODE)
       if (!approver) {
         continue
       }
