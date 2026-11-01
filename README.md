@@ -55,12 +55,6 @@ npm run db:migrate
 npm run db:seed
 ```
 
-**Akun default setelah seed:**
-
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | admin@smkn1subang.sch.id | sipko@2024! |
-| Approver (Kepsek) | kepsek@smkn1subang.sch.id | kepsek@2024! |
 
 ### 5. Jalankan Dev Server
 ```bash
