@@ -2,7 +2,7 @@
 // Handler interaktif pesan masuk WhatsApp untuk persetujuan cepat (Kepala Sekolah / Tim Manajemen)
 
 import { prisma } from '@/lib/prisma'
-import { normalizePhone } from './baileys-adapter'
+import { normalizePhone, jidToPhoneMap } from './baileys-adapter'
 import { processBookingApproval, formatWaDate } from '@/lib/booking-approval-service'
 
 // Cache untuk mendeteksi & mencegah duplikasi pesan yang diproses ulang
