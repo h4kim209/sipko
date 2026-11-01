@@ -669,6 +669,9 @@ tbody td {
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .sidebar {
