@@ -3,21 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panduan Penggunaan SIPKO — SMKN 1 Subang</title>
+  <title>Panduan Pengajuan Peminjaman Kendaraan — SIPKO SMKN 1 Subang</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="/favicon.ico">
-  <style>
-    @keyframes pulse-soft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-    }
-    .pulse-card { animation: pulse-soft 3s infinite ease-in-out; }
-  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased">
 
   <!-- Header Banner -->
-  <div class="max-w-5xl mx-auto bg-gradient-to-r from-teal-700 via-teal-800 to-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl border border-teal-500/30 mb-8">
+  <div class="max-w-4xl mx-auto bg-gradient-to-r from-teal-700 via-teal-800 to-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl border border-teal-500/30 mb-8">
     <div class="flex flex-col md:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-4">
         <div class="w-16 h-16 rounded-xl bg-teal-500/20 border border-teal-400 flex items-center justify-center text-3xl shadow-inner">
@@ -25,10 +18,10 @@
         </div>
         <div>
           <span class="inline-block px-3 py-1 bg-teal-400/20 text-teal-300 text-xs font-semibold rounded-full border border-teal-400/30 uppercase tracking-wider mb-2">
-            Panduan Resmi Pengoperasian
+            Panduan Pengguna (Guru & Tenaga Kependidikan)
           </span>
           <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">SIPKO SMKN 1 SUBANG</h1>
-          <p class="text-teal-200 text-sm mt-1">Sistem Informasi Peminjaman Kendaraan Operasional Sekolah</p>
+          <p class="text-teal-200 text-sm mt-1">Tata Cara Peminjaman Kendaraan Operasional Sekolah</p>
         </div>
       </div>
       <div class="flex gap-2">
@@ -39,331 +32,138 @@
     </div>
   </div>
 
-  <div class="max-w-5xl mx-auto space-y-8">
+  <div class="max-w-4xl mx-auto space-y-8">
 
-    <!-- Role Selector Tabs -->
-    <div class="bg-slate-800/80 p-2 rounded-xl border border-slate-700 flex flex-wrap gap-2 justify-center shadow-lg">
-      <button onclick="switchTab('pemohon')" id="tab-pemohon" class="tab-btn px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 bg-teal-600 text-white shadow-md flex items-center gap-2">
-        <span>👤</span> 1. Alur Pemohon (Guru / Staf)
-      </button>
-      <button onclick="switchTab('approver')" id="tab-approver" class="tab-btn px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-700/60 flex items-center gap-2">
-        <span>⚡</span> 2. Pejabat Penyetuju (Respon WhatsApp)
-      </button>
-      <button onclick="switchTab('admin')" id="tab-admin" class="tab-btn px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 text-slate-300 hover:text-white hover:bg-slate-700/60 flex items-center gap-2">
-        <span>🛠️</span> 3. Administrator & Pengelola
-      </button>
-      <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 text-amber-300 hover:text-white hover:bg-slate-700/60 border border-amber-500/30 flex items-center gap-2">
-        <span>📱</span> 4. Simulasi Balas WA
-      </button>
-    </div>
+    <!-- Ringkasan Alur 5 Langkah Cepat -->
+    <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
+      <h2 class="text-xl font-bold text-teal-300 flex items-center gap-3 mb-2">
+        <span>📋</span> Alur Peminjaman Kendaraan Dinas
+      </h2>
+      <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+        Peminjaman kendaraan dinas operasional SMKN 1 Subang kini sepenuhnya digital, transparan, dan tidak memerlukan login akun. Ikuti 5 langkah mudah berikut:
+      </p>
 
-    <!-- TAB 1: PEMOHON -->
-    <div id="content-pemohon" class="tab-content space-y-6">
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
-        <h2 class="text-xl font-bold text-teal-300 flex items-center gap-3 mb-6">
-          <span class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center text-base font-bold">A</span>
-          Tahapan Peminjaman untuk Guru / Tenaga Kependidikan
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Step 1 -->
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 flex flex-col justify-between">
-            <div>
-              <div class="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center mb-3">1</div>
-              <h3 class="font-bold text-white text-base mb-2">Buka Website</h3>
-              <p class="text-slate-300 text-xs leading-relaxed">
-                Akses <code class="text-teal-300 bg-slate-800 px-1.5 py-0.5 rounded">sipko.smkn1subang.sch.id</code> di browser HP/Laptop. Klik tombol <strong>Ajukan Peminjaman</strong>.
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-teal-400 font-medium">
-              💡 Tanpa perlu login akun
-            </div>
+      <div class="space-y-4">
+        <!-- Step 1 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-lg flex items-center justify-center shrink-0 shadow">
+            1
           </div>
-
-          <!-- Step 2 -->
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 flex flex-col justify-between">
-            <div>
-              <div class="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center mb-3">2</div>
-              <h3 class="font-bold text-white text-base mb-2">Isi Formulir</h3>
-              <p class="text-slate-300 text-xs leading-relaxed">
-                Lengkapi nama, nomor WhatsApp, tujuan dinas, jadwal berangkat & kembali, serta pilih mobil operasional (misal: Honda BR-V).
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-emerald-400 font-medium">
-              📍 Jarak & rute otomatis terhitung
-            </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">Isi Formulir Pengajuan di Website</h3>
+            <p class="text-slate-300 text-xs mt-1 leading-relaxed">
+              Buka menu <strong>Ajukan Peminjaman</strong> di website SIPKO. Lengkapi nama pemohon, NIP, nomor WhatsApp, tujuan dinas, jadwal berangkat & pulang, serta pilih unit mobil dinas (misal: <em>Honda BR-V</em>). Jarak tempuh dan estimasi rute otomatis terhitung di peta.
+            </p>
           </div>
-
-          <!-- Step 3 -->
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 flex flex-col justify-between">
-            <div>
-              <div class="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center mb-3">3</div>
-              <h3 class="font-bold text-white text-base mb-2">Terima Notif WA</h3>
-              <p class="text-slate-300 text-xs leading-relaxed">
-                Sistem mengirimkan <strong>Kode Booking</strong> unik (contoh: <span class="font-mono text-amber-300 font-bold">SIP-44ZVTGUA</span>) ke nomor WhatsApp Anda.
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-amber-400 font-medium">
-              ⏳ Menunggu ACC Kepala Sekolah
-            </div>
-          </div>
-
-          <!-- Step 4 -->
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80 flex flex-col justify-between">
-            <div>
-              <div class="w-8 h-8 rounded-full bg-teal-600 text-white font-black text-sm flex items-center justify-center mb-3">4</div>
-              <h3 class="font-bold text-white text-base mb-2">Pemeriksaan & Jalan</h3>
-              <p class="text-slate-300 text-xs leading-relaxed">
-                Setelah di-ACC, buka menu <strong>Cek Booking</strong> di web, foto spidometer awal + kondisi mobil, ambil kunci di sarpras, dan selamat bertugas!
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-teal-400 font-medium">
-              📸 Foto langsung via kamera HP
-            </div>
-          </div>
+          <span class="px-3 py-1 bg-teal-500/10 text-teal-300 text-[11px] font-semibold rounded-lg border border-teal-500/20 shrink-0">
+            Tanpa Perlu Login
+          </span>
         </div>
 
-        <!-- Alur Kepulangan -->
-        <div class="mt-6 bg-slate-900/90 rounded-xl p-5 border border-slate-700">
-          <h4 class="font-bold text-sm text-teal-300 mb-2 flex items-center gap-2">
-            <span>🏁</span> Saat Mengembalikan Kendaraan:
-          </h4>
-          <ol class="list-decimal list-inside text-xs text-slate-300 space-y-1.5 leading-relaxed">
-            <li>Parkir mobil di tempat semula di SMKN 1 Subang.</li>
-            <li>Buka kembali menu <strong>Cek Booking</strong> di web SIPKO, masukkan kode booking Anda.</li>
-            <li>Unggah foto spidometer kepulangan (KM akhir) dan foto kondisi mobil.</li>
-            <li>Serahkan kunci fisik kembali ke petugas Sarpras. Status peminjaman otomatis selesai!</li>
-          </ol>
+        <!-- Step 2 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-lg flex items-center justify-center shrink-0 shadow">
+            2
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">Terima Notifikasi Kode Booking di WhatsApp</h3>
+            <p class="text-slate-300 text-xs mt-1 leading-relaxed">
+              Sesaat setelah formulir dikirim, sistem otomatis mengirim pesan WhatsApp resmi berisi <strong>Kode Booking</strong> Anda (contoh: <span class="font-mono text-amber-300 font-bold">SIP-44ZVTGUA</span>). Simpan kode ini untuk memantau status persetujuan.
+            </p>
+          </div>
+          <span class="px-3 py-1 bg-amber-500/10 text-amber-300 text-[11px] font-semibold rounded-lg border border-amber-500/20 shrink-0">
+            Notifikasi WhatsApp
+          </span>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-lg flex items-center justify-center shrink-0 shadow">
+            3
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">Persetujuan oleh Kepala Sekolah</h3>
+            <p class="text-slate-300 text-xs mt-1 leading-relaxed">
+              Kepala Sekolah menerima permohonan Anda dan memberikan persetujuan (ACC). Begitu disetujui, Anda langsung menerima notifikasi WhatsApp: <span class="text-emerald-400 font-semibold">"SIPKO — Peminjaman Disetujui ✅"</span>.
+            </p>
+          </div>
+          <span class="px-3 py-1 bg-emerald-500/10 text-emerald-300 text-[11px] font-semibold rounded-lg border border-emerald-500/20 shrink-0">
+            Respon Cepat
+          </span>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-lg flex items-center justify-center shrink-0 shadow">
+            4
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">Pemeriksaan Awal & Pengambilan Kunci</h3>
+            <p class="text-slate-300 text-xs mt-1 leading-relaxed">
+              Sebelum berangkat, buka menu <strong>Cek Booking</strong> di website, masukkan kode booking Anda. Unggah foto angka spidometer (KM awal) dan foto kondisi mobil. Ambil kunci kontak fisik di ruang Sarpras dan Anda siap berangkat.
+            </p>
+          </div>
+          <span class="px-3 py-1 bg-teal-500/10 text-teal-300 text-[11px] font-semibold rounded-lg border border-teal-500/20 shrink-0">
+            Foto via Kamera HP
+          </span>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black text-lg flex items-center justify-center shrink-0 shadow">
+            5
+          </div>
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">Pengembalian Kendaraan & Unggah KM Akhir</h3>
+            <p class="text-slate-300 text-xs mt-1 leading-relaxed">
+              Setelah selesai bertugas, parkir mobil di tempat semula di SMKN 1 Subang. Buka menu <strong>Cek Booking</strong>, unggah foto angka spidometer kepulangan (KM akhir), lalu serahkan kunci kontak ke petugas Sarpras. Peminjaman selesai!
+            </p>
+          </div>
+          <span class="px-3 py-1 bg-emerald-500/10 text-emerald-300 text-[11px] font-semibold rounded-lg border border-emerald-500/20 shrink-0">
+            Selesai Bertugas
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- TAB 2: APPROVER WHATSAPP -->
-    <div id="content-approver" class="tab-content hidden space-y-6">
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
-        <h2 class="text-xl font-bold text-amber-300 flex items-center gap-3 mb-4">
-          <span class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-base font-bold">B</span>
-          Respon Cepat Kepala Sekolah via Pesan WhatsApp (Tanpa Login Web)
-        </h2>
-        <p class="text-slate-300 text-sm mb-6 leading-relaxed">
-          Setiap kali ada pengajuan peminjaman baru, bot WhatsApp SIPKO otomatis mengirimkan pesan konfirmasi ke nomor WhatsApp Kepala Sekolah. Pejabat cukup membalas langsung di ruang obrolan WhatsApp:
-        </p>
+    <!-- Tombol Aksi Cepat -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <a href="/pengajuan" class="p-5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 rounded-xl text-center font-bold text-white shadow-lg transition flex items-center justify-center gap-3">
+        <span class="text-xl">📝</span>
+        <span>Mulai Ajukan Peminjaman Kendaraan</span>
+      </a>
+      <a href="/cek-booking" class="p-5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-center font-bold text-teal-300 shadow-lg transition flex items-center justify-center gap-3">
+        <span class="text-xl">🔍</span>
+        <span>Cek Status / Unggah Foto Bukti Booking</span>
+      </a>
+    </div>
 
-        <!-- Command Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Cara Setuju -->
-          <div class="bg-emerald-950/40 border-2 border-emerald-500/50 rounded-2xl p-6 relative overflow-hidden shadow-xl">
-            <div class="absolute top-0 right-0 bg-emerald-500 text-slate-950 text-xs font-black px-4 py-1 rounded-bl-xl uppercase tracking-wider">
-              Setujui Peminjaman
-            </div>
-            <div class="text-3xl mb-3">✅</div>
-            <h3 class="text-lg font-bold text-emerald-300 mb-2">Ketik Angka 1</h3>
-            <p class="text-slate-300 text-sm leading-relaxed mb-4">
-              Cukup balas pesan notifikasi dengan mengetik angka <span class="bg-emerald-800/60 text-emerald-200 px-2 py-0.5 rounded font-mono font-bold">1</span> atau kata <span class="bg-emerald-800/60 text-emerald-200 px-2 py-0.5 rounded font-mono font-bold">SETUJU</span>.
-            </p>
-            <div class="bg-slate-900/90 rounded-xl p-3 border border-emerald-500/30 text-xs space-y-1.5 text-slate-300">
-              <div class="font-semibold text-emerald-400">Efek Otomatis Sistem:</div>
-              <div>• Status pengajuan langsung berubah jadi <strong class="text-white">DISETUJUI</strong>.</div>
-              <div>• Pemohon (guru/staf) langsung menerima notifikasi WA bahwa pengajuannya disetujui.</div>
-              <div>• Mobil di kalender otomatis terkunci pada jam tersebut.</div>
-            </div>
-          </div>
-
-          <!-- Cara Tolak -->
-          <div class="bg-rose-950/40 border-2 border-rose-500/50 rounded-2xl p-6 relative overflow-hidden shadow-xl">
-            <div class="absolute top-0 right-0 bg-rose-500 text-white text-xs font-black px-4 py-1 rounded-bl-xl uppercase tracking-wider">
-              Tolak Peminjaman
-            </div>
-            <div class="text-3xl mb-3">❌</div>
-            <h3 class="text-lg font-bold text-rose-300 mb-2">Ketik 2 [Alasan]</h3>
-            <p class="text-slate-300 text-sm leading-relaxed mb-4">
-              Ketik angka 2 diikuti alasan penolakan, contoh: <br>
-              <code class="text-rose-300 bg-slate-900/90 px-2.5 py-1 rounded font-mono font-bold text-xs inline-block mt-2">2 Mobil dipakai dinas ke Disdik</code>
-            </p>
-            <div class="bg-slate-900/90 rounded-xl p-3 border border-rose-500/30 text-xs space-y-1.5 text-slate-300">
-              <div class="font-semibold text-rose-400">Catatan Penting:</div>
-              <div>• Jika hanya ketik <strong>2</strong> saja tanpa alasan, bot akan ramah mengingatkan untuk menyertakan alasan.</div>
-              <div>• Pemohon menerima pesan WA penolakan beserta alasan resmi dari Kepala Sekolah.</div>
-            </div>
-          </div>
+    <!-- Pertanyaan Sering Diajukan (FAQ) -->
+    <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
+      <h2 class="text-lg font-bold text-teal-300 flex items-center gap-2 mb-4">
+        <span>❓</span> Pertanyaan yang Sering Diajukan (FAQ)
+      </h2>
+      <div class="space-y-4 text-xs md:text-sm text-slate-300">
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+          <strong class="text-white block mb-1">Apakah saya harus membuat akun login untuk meminjam mobil?</strong>
+          Tidak perlu. Semua guru dan staf SMKN 1 Subang dapat langsung mengajukan peminjaman melalui menu web tanpa harus mendaftar atau login akun.
         </div>
-
-        <!-- Tabel Perintah Tambahan -->
-        <div class="mt-6 bg-slate-900/90 rounded-xl border border-slate-700 overflow-hidden">
-          <div class="px-5 py-3 bg-slate-800 text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-700">
-            Daftar Perintah Tambahan Khusus Pejabat Penyetuju
-          </div>
-          <div class="p-4 space-y-3 text-sm">
-            <div class="flex items-start gap-4">
-              <span class="font-mono bg-slate-800 text-teal-300 px-3 py-1 rounded border border-slate-700 font-bold whitespace-nowrap">STATUS</span>
-              <p class="text-slate-300 text-xs">Melihat daftar seluruh pengajuan kendaraan yang saat ini sedang menunggu persetujuan.</p>
-            </div>
-            <div class="flex items-start gap-4">
-              <span class="font-mono bg-slate-800 text-teal-300 px-3 py-1 rounded border border-slate-700 font-bold whitespace-nowrap">BANTUAN</span>
-              <p class="text-slate-300 text-xs">Melihat ringkasan format balasan resmi persetujuan WhatsApp.</p>
-            </div>
-          </div>
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+          <strong class="text-white block mb-1">Bagaimana jika jadwal keberangkatan saya bentrok dengan peminjam lain?</strong>
+          Sistem kalender cerdas SIPKO akan otomatis mendeteksi jika kendaraan sudah dipesan di jam tersebut dan menyarankan Anda memilih mobil lain atau menyesuaikan jam keberangkatan.
+        </div>
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+          <strong class="text-white block mb-1">Bagaimana saya tahu jika pengajuan saya sudah disetujui atau ditolak?</strong>
+          Bot WhatsApp SIPKO akan otomatis mengirimkan pesan konfirmasi langsung ke nomor WhatsApp Anda secara instan begitu Kepala Sekolah memberikan keputusan.
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: ADMIN & PENGELOLA -->
-    <div id="content-admin" class="tab-content hidden space-y-6">
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
-        <h2 class="text-xl font-bold text-teal-300 flex items-center gap-3 mb-6">
-          <span class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center text-base font-bold">C</span>
-          Petunjuk Dashboard Admin & Pengelola Sarpras
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80">
-            <div class="text-2xl mb-2">📊</div>
-            <h3 class="font-bold text-white text-base mb-1">Dashboard Monitoring</h3>
-            <p class="text-slate-300 text-xs leading-relaxed">
-              Memantau mobil yang sedang digunakan di lapangan, jadwal peminjaman hari ini, grafik odometer per mobil, dan peringatan keterlambatan.
-            </p>
-          </div>
-
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80">
-            <div class="text-2xl mb-2">📋</div>
-            <h3 class="font-bold text-white text-base mb-1">Verifikasi Pengembalian</h3>
-            <p class="text-slate-300 text-xs leading-relaxed">
-              Memeriksa foto spidometer kepulangan, menghitung jarak riil tempuh (KM), memeriksa kondisi kebersihan mobil, dan menyelesaikan status pinjaman.
-            </p>
-          </div>
-
-          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/80">
-            <div class="text-2xl mb-2">🖨️</div>
-            <h3 class="font-bold text-white text-base mb-1">Laporan & Cetak</h3>
-            <p class="text-slate-300 text-xs leading-relaxed">
-              Cetak Laporan Rekapitulasi Pemakaian Kendaraan Sekolah secara berkala (PDF / Excel) untuk keperluan audit aset dan LPJ dinas.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 4: INTERACTIVE SIMULATOR -->
-    <div id="content-simulator" class="tab-content hidden space-y-6">
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-xl">
-        <div class="text-center mb-6">
-          <h2 class="text-lg font-bold text-amber-300">Simulasi Langsung Balas WhatsApp SIPKO</h2>
-          <p class="text-slate-400 text-xs mt-1">Coba ketik atau klik tombol di bawah untuk melihat bagaimana sistem merespon</p>
-        </div>
-
-        <div class="max-w-md mx-auto bg-slate-950 rounded-3xl border-4 border-slate-700 shadow-2xl overflow-hidden">
-          <!-- Phone Header -->
-          <div class="bg-teal-800 text-white p-4 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center font-bold text-white">SK</div>
-            <div>
-              <div class="font-bold text-sm">SIPKO SMKN 1 Subang</div>
-              <div class="text-[10px] text-teal-200">Bot WhatsApp Otomatis • Online</div>
-            </div>
-          </div>
-
-          <!-- Chat Body -->
-          <div id="sim-chat-box" class="p-4 space-y-3 h-80 overflow-y-auto text-xs bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
-            <!-- Bot message -->
-            <div class="bg-slate-900 text-slate-200 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[85%] shadow">
-              <div class="font-bold text-teal-400 mb-1">SIPKO — Pengajuan Baru 📋</div>
-              <div>👤 Pemohon: Budi Santoso, S.Pd</div>
-              <div>🚙 Mobil: Honda BR-V (D 1234 AB)</div>
-              <div>📍 Tujuan: Disdik Jabar, Bandung</div>
-              <div>🔖 Kode: <span class="font-mono text-amber-300 font-bold">SIP-99SAMPLE</span></div>
-              <div class="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-400">
-                Balas <strong>1</strong> (Setuju) atau <strong>2 [Alasan]</strong> (Tolak)
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Actions & Input -->
-          <div class="p-3 bg-slate-900 border-t border-slate-800 space-y-2">
-            <div class="flex gap-2">
-              <button onclick="simulateSend('1')" class="flex-1 py-1.5 bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white rounded-lg text-xs font-bold border border-emerald-500/40 transition">
-                Ketik 1 (Setuju)
-              </button>
-              <button onclick="simulateSend('2 Mobil dipakai dinas')" class="flex-1 py-1.5 bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg text-xs font-bold border border-rose-500/40 transition">
-                Ketik 2 (Tolak)
-              </button>
-              <button onclick="simulateSend('2')" class="py-1.5 px-3 bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white rounded-lg text-xs font-bold border border-amber-500/40 transition">
-                Tes '2'
-              </button>
-            </div>
-            <div class="flex gap-2">
-              <input type="text" id="sim-input" placeholder="Ketik pesan..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-teal-500" onkeydown="if(event.key==='Enter') simulateCustomSend()">
-              <button onclick="simulateCustomSend()" class="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold">Kirim</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Footer Tip -->
+    <!-- Footer -->
     <div class="bg-teal-950/40 border border-teal-500/30 rounded-xl p-4 text-center text-xs text-teal-300">
-      🏫 <strong>SIPKO SMKN 1 Subang</strong> — Dikelola oleh Tim Manajemen & Sarpras Sekolah | Bantuan Teknis: Administrator SIPKO
+      🏫 <strong>SIPKO SMKN 1 Subang</strong> — Dikelola oleh Tim Manajemen & Sarpras SMKN 1 Subang
     </div>
 
   </div>
-
-  <script>
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-teal-600', 'text-white', 'shadow-md');
-        btn.classList.add('text-slate-300');
-      });
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-
-      const activeBtn = document.getElementById('tab-' + tab);
-      const activeContent = document.getElementById('content-' + tab);
-
-      if (activeBtn && activeContent) {
-        activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow-md');
-        activeBtn.classList.remove('text-slate-300');
-        activeContent.classList.remove('hidden');
-      }
-    }
-
-    function simulateSend(text) {
-      const chatBox = document.getElementById('sim-chat-box');
-      
-      // Add user message
-      const userBubble = document.createElement('div');
-      userBubble.className = 'bg-teal-700 text-white p-2.5 rounded-2xl rounded-tr-none ml-auto max-w-[75%] shadow text-right';
-      userBubble.textContent = text;
-      chatBox.appendChild(userBubble);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      // Simulate bot reply after 500ms
-      setTimeout(() => {
-        const botBubble = document.createElement('div');
-        botBubble.className = 'bg-slate-900 text-slate-200 p-3 rounded-2xl rounded-tl-none border border-slate-800 max-w-[85%] shadow';
-
-        const t = text.trim().toLowerCase();
-        if (t === '1' || t.startsWith('1 ') || t.startsWith('setuju')) {
-          botBubble.innerHTML = '<div class="font-bold text-emerald-400 mb-1">✅ PENGAJUAN DISETUJUI</div><div>Kode: <strong>SIP-99SAMPLE</strong></div><div class="text-[10px] text-slate-400 mt-1">Notifikasi persetujuan otomatis terkirim ke WhatsApp Budi Santoso, S.Pd. Terima kasih Bapak/Ibu Kepala Sekolah. 🙏</div>';
-        } else if (t === '2') {
-          botBubble.innerHTML = '<div class="font-bold text-amber-400 mb-1">⚠️ Alasan Penolakan Wajib Diisi</div><div class="text-[11px] text-slate-300">Mohon sertakan alasan penolakan, contoh:<br>👉 <strong>2 Mobil sedang diservis</strong></div>';
-        } else if (t.startsWith('2 ') || t.startsWith('tolak')) {
-          const reason = text.replace(/^2\s*|^tolak\s*/i, '');
-          botBubble.innerHTML = `<div class="font-bold text-rose-400 mb-1">❌ PENGAJUAN DITOLAK</div><div>Kode: <strong>SIP-99SAMPLE</strong></div><div class="text-[11px] text-slate-300 mt-1">Alasan: <em>"${reason}"</em></div><div class="text-[10px] text-slate-400 mt-1">Notifikasi penolakan otomatis terkirim ke WhatsApp pemohon.</div>`;
-        } else if (t === 'status') {
-          botBubble.innerHTML = '<div class="font-bold text-teal-400 mb-1">📋 STATUS SIPKO</div><div>1. SIP-99SAMPLE — Budi Santoso (Disdik Jabar)</div>';
-        } else {
-          botBubble.innerHTML = '<div class="font-bold text-slate-300">💡 BANTUAN</div><div>Balas <strong>1</strong> untuk Setuju, atau <strong>2 [Alasan]</strong> untuk Tolak.</div>';
-        }
-
-        chatBox.appendChild(botBubble);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, 600);
-    }
-
-    function simulateCustomSend() {
-      const input = document.getElementById('sim-input');
-      if (input.value.trim()) {
-        simulateSend(input.value.trim());
-        input.value = '';
-      }
-    }
-  </script>
 </body>
 </html>
