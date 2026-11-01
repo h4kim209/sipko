@@ -62,6 +62,9 @@ export default function HomePage() {
             </div>
           </Link>
           <div className="public-nav-links">
+            <a href="/panduan.html" target="_blank" className="btn btn-secondary btn-sm">
+              📖 Panduan
+            </a>
             <Link href="/cek-booking" className="btn btn-secondary btn-sm">
               🔍 Cek Booking
             </Link>
@@ -182,6 +185,11 @@ export default function HomePage() {
           </div>
           <div style={{ fontSize: '0.875rem' }}>
             SMKN 1 Subang | Jl. Arief Rahman Hakim No.35, Subang, Jawa Barat
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <a href="/panduan.html" target="_blank" style={{ color: 'var(--color-primary-400)', fontSize: '0.8rem', textDecoration: 'underline' }}>
+              📖 Buka Panduan Penggunaan Interaktif SIPKO
+            </a>
           </div>
           <div style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
             © {new Date().getFullYear()} SMKN 1 Subang. All rights reserved.
