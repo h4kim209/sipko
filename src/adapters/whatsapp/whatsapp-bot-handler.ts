@@ -150,7 +150,7 @@ async function processApproverCommand(
     lower.startsWith('info ')
   ) {
     intention = 'STATUS'
-  } else if (['bantuan', 'help', 'menu', 'panduan', 'halo', 'hai', 'p', '?'].includes(lower)) {
+  } else if (['bantuan', 'help', 'menu', 'panduan'].includes(lower) || lower === '/help' || lower === '/menu') {
     intention = 'HELP'
   } else if (
     lower === '1' ||
@@ -238,8 +238,13 @@ async function processApproverCommand(
     return
   }
 
-  // JIKA PERINTAH BANTUAN / PANDUAN
-  if (intention === 'HELP' || intention === 'UNKNOWN') {
+  // JIKA BUKAN PERINTAH RESMI, DIAM (JANGAN BALAS) AGAR TIDAK MENGGANGGU CHAT PRIBADI
+  if (intention === 'UNKNOWN') {
+    return
+  }
+
+  // JIKA PERINTAH BANTUAN SECARA EKSPLISIT DIMINTA (BANTUAN / MENU / PANDUAN)
+  if (intention === 'HELP') {
     await reply(
       `*SIPKO — Layanan Persetujuan WhatsApp* 🚗\n` +
       `SMK Negeri 1 Subang\n\n` +
