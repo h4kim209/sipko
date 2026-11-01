@@ -113,21 +113,9 @@ export async function handleIncomingWhatsAppMessage(sock: any, upsert: any): Pro
         approver = candidates.find((u) => u.phoneWa && normalizePhone(u.phoneWa) === cleanSender) || null
       }
 
-      // Jika nomor pengirim BUKAN pejabat penyetuju / admin
+      // Jika nomor pengirim BUKAN pejabat penyetuju / admin, abaikan sepenuhnya (SILENT MODE)
+      // agar tidak mengganggu percakapan lain karena nomor WhatsApp ini digunakan juga untuk komunikasi lain
       if (!approver) {
-        const lower = rawText.toLowerCase()
-        const isTrigger = ['1', '2', 'setuju', 'tolak', 'status', 'cek', 'menu', 'bantuan', 'info'].some(
-          (k) => lower.startsWith(k)
-        )
-        if (isTrigger) {
-          await reply(
-            `*SIPKO SMKN 1 SUBANG* 🚗\n\n` +
-            `Halo! Nomor Anda (*+${cleanSender}*) belum terdaftar sebagai Pejabat Penyetuju (Kepala Sekolah / Tim Manajemen SIPKO).\n\n` +
-            `Untuk memantau status peminjaman Anda, silakan buka menu Cek Booking di website resmi SIPKO:\n` +
-            `${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/cek-booking\n\n` +
-            `Terima kasih 🙏`
-          )
-        }
         continue
       }
 
