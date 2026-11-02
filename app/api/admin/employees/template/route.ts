@@ -15,13 +15,14 @@ export async function GET(request: NextRequest) {
 
   // Jika admin meminta file data lengkap yang telah diakurkan:
   if (type === 'full') {
-    const filePath = path.join(process.cwd(), 'data guru', 'DAFTAR_GURU_TENDIK_LENGKAP.xlsx')
+    const uploadFilePath = path.join(process.cwd(), 'data guru', 'DAFTAR_GURU_TENDIK_SIPKO_UPLOAD.xlsx')
+    const fallbackPath = path.join(process.cwd(), 'data guru', 'DAFTAR_GURU_TENDIK_LENGKAP.xlsx')
     try {
-      const fileBuffer = await fs.readFile(filePath)
+      const fileBuffer = await fs.readFile(uploadFilePath).catch(() => fs.readFile(fallbackPath))
       return new NextResponse(new Uint8Array(fileBuffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': 'attachment; filename="DAFTAR_GURU_TENDIK_SMKN1SUBANG_LENGKAP.xlsx"',
+          'Content-Disposition': 'attachment; filename="DAFTAR_GURU_TENDIK_SMKN1SUBANG_UPLOAD.xlsx"',
         },
       })
     } catch {

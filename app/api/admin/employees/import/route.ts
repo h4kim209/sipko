@@ -47,7 +47,17 @@ export async function POST(request: NextRequest) {
     }
 
     const sheet = wb.Sheets[sheetName]
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet)
+
+    // Deteksi cerdas: cari baris yang memuat kolom 'Nama' (bisa di baris 1 atau setelah banner judul)
+    const aoa = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 })
+    let headerRowIdx = aoa.findIndex((row) =>
+      Array.isArray(row) && row.some((cell) => /nama/i.test(String(cell || '')) && !/sekolah|ibu|ayah/i.test(String(cell || '')))
+    )
+    if (headerRowIdx === -1) headerRowIdx = 0
+
+    const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, {
+      range: headerRowIdx,
+    })
 
     if (!rawRows || rawRows.length === 0) {
       return NextResponse.json({ error: 'Tidak ada baris data yang ditemukan di dalam Excel.' }, { status: 400 })
