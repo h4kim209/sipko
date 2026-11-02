@@ -52,7 +52,7 @@ async function getPhotoBase64(relativePath: string): Promise<{ data: string; for
 }
 
 export async function GET(request: NextRequest) {
-  const session = await apiAuth(['ADMIN', 'SUPER_ADMIN'])
+  const session = await apiAuth(['ADMIN', 'APPROVER', 'SUPER_ADMIN'])
   if (!session) return NextResponse.json({ error: 'Tidak terotorisasi' }, { status: 401 })
 
   const format = request.nextUrl.searchParams.get('format') || 'xlsx'

@@ -8,7 +8,7 @@ import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit'
 import { getWhatsAppAdapter, WA_TEMPLATES } from '@/adapters/whatsapp'
 
 export async function POST(request: NextRequest) {
-  const session = await apiAuth(['ADMIN', 'SUPER_ADMIN'])
+  const session = await apiAuth(['ADMIN', 'APPROVER', 'SUPER_ADMIN'])
   if (!session) return NextResponse.json({ error: 'Tidak terotorisasi' }, { status: 401 })
 
   try {
