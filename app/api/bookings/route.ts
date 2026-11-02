@@ -8,6 +8,7 @@ import { generateBookingCode } from '@/lib/booking-code'
 import { writeAuditLog, AUDIT_ACTIONS } from '@/lib/audit'
 import { CreateBookingSchema } from '@/lib/validators/booking'
 import { getWhatsAppAdapter, WA_TEMPLATES, getApproverPhoneNumbers } from '@/adapters/whatsapp'
+import { saveFile } from '@/lib/file-storage'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +26,13 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data
 
-    // Cek kendaraan tersedia
+    // Cek kendaraan ada dan aktif (tidak pensiun)
     const vehicle = await prisma.vehicle.findFirst({
-      where: { id: data.vehicleId, status: 'AVAILABLE', deletedAt: null },
+      where: { id: data.vehicleId, deletedAt: null, status: { not: 'RETIRED' } },
     })
     if (!vehicle) {
       return NextResponse.json(
-        { error: 'Kendaraan tidak tersedia atau tidak ditemukan.' },
+        { error: 'Kendaraan tidak ditemukan atau berstatus non-aktif.' },
         { status: 400 }
       )
     }
