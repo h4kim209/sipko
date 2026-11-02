@@ -14,11 +14,16 @@ export default async function KalenderPage() {
     select: { id: true, name: true, plateNumber: true },
   })
 
-  // Booking aktif/mendatang (30 hari)
+  // Booking dalam rentang luas (-6 bulan s.d. +6 bulan) agar navigasi bulan responsif
   const startRange = new Date()
-  startRange.setDate(startRange.getDate() - 7)
+  startRange.setMonth(startRange.getMonth() - 6)
+  startRange.setDate(1)
+  startRange.setHours(0, 0, 0, 0)
+
   const endRange = new Date()
-  endRange.setDate(endRange.getDate() + 30)
+  endRange.setMonth(endRange.getMonth() + 7)
+  endRange.setDate(0)
+  endRange.setHours(23, 59, 59, 999)
 
   const bookings = await prisma.booking.findMany({
     where: {
@@ -38,6 +43,7 @@ export default async function KalenderPage() {
       departureDatetime: true,
       returnDatetime: true,
       status: true,
+      driverName: true,
     },
     orderBy: { departureDatetime: 'asc' },
   })
@@ -53,7 +59,7 @@ export default async function KalenderPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">📅 Kalender Kendaraan</h1>
-        <p className="page-subtitle">Lihat jadwal penggunaan kendaraan dalam 30 hari ke depan.</p>
+        <p className="page-subtitle">Pantau jadwal dan ketersediaan armada operasional dalam rentang 1 bulan penuh.</p>
       </div>
       <CalendarView vehicles={vehicles} bookings={serializedBookings} />
     </div>
