@@ -1,6 +1,6 @@
 'use client'
 // src/components/booking/vehicle-calendar-picker.tsx
-// Visualizer kalender ketersediaan tanggal kendaraan & penetapan jadwal terpadu
+// Visualizer kalender ketersediaan tanggal kendaraan & penetapan jadwal terpadu dengan proteksi anti-bentrok
 
 import { useState, useEffect, useMemo } from 'react'
 
@@ -26,6 +26,7 @@ type Props = {
   onDepartureChange: (val: string) => void
   onReturnChange: (val: string) => void
   onSelectDateRange?: (depDate: string, retDate: string) => void
+  onClashChange?: (hasClash: boolean, message: string | null) => void
 }
 
 export function VehicleCalendarPicker({
@@ -40,6 +41,7 @@ export function VehicleCalendarPicker({
   onDepartureChange,
   onReturnChange,
   onSelectDateRange,
+  onClashChange,
 }: Props) {
   const [schedules, setSchedules] = useState<BookingSchedule[]>([])
   const [loading, setLoading] = useState(false)
@@ -99,6 +101,9 @@ export function VehicleCalendarPicker({
       let isPending = false
 
       for (const s of schedules) {
+        // Cek semua booking yang aktif (tidak ditolak/dibatalkan)
+        if (['DITOLAK', 'DIBATALKAN'].includes(s.status)) continue
+
         const start = new Date(s.departureDatetime)
         start.setHours(0, 0, 0, 0)
         const end = new Date(s.returnDatetime)
@@ -106,7 +111,9 @@ export function VehicleCalendarPicker({
 
         if (dateObj >= start && dateObj <= end) {
           bookedInfo = s
-          if (!s.isApproved) isPending = true
+          if (!s.isApproved || s.status === 'MENUNGGU_PERSETUJUAN') {
+            isPending = true
+          }
           break
         }
       }
@@ -118,8 +125,8 @@ export function VehicleCalendarPicker({
         date: dateObj,
         dateString,
         isPast,
-        isBooked: Boolean(bookedInfo && bookedInfo.isApproved),
-        isPending: Boolean(bookedInfo && !bookedInfo.isApproved),
+        isBooked: Boolean(bookedInfo && !isPending),
+        isPending: Boolean(bookedInfo && isPending),
         bookedInfo,
       })
     }
@@ -127,7 +134,7 @@ export function VehicleCalendarPicker({
     return days
   }, [currentMonth, schedules])
 
-  // Deteksi tabrakan jadwal dengan input formulir saat ini
+  // Deteksi tabrakan jadwal dengan input formulir saat ini (ANTI DOUBLE BOOKING)
   const clashWarning = useMemo(() => {
     if (!departureValue || !returnValue || schedules.length === 0) return null
 
@@ -137,16 +144,27 @@ export function VehicleCalendarPicker({
     if (isNaN(dep) || isNaN(ret) || dep >= ret) return null
 
     for (const s of schedules) {
-      if (!s.isApproved) continue // Hanya cek bentrok dengan yang sudah disetujui / aktif
+      // Abaikan jika booking sudah ditolak atau dibatalkan
+      if (['DITOLAK', 'DIBATALKAN'].includes(s.status)) continue
+
       const sDep = new Date(s.departureDatetime).getTime()
       const sRet = new Date(s.returnDatetime).getTime()
 
+      // Jika waktu tumpang tindih
       if (dep < sRet && ret > sDep) {
-        return `Armada "${vehicleName}" sudah terisi jadwal peminjaman ${s.bookingCode} (Tujuan: ${s.destinationName}) pada waktu tersebut. Silakan pilih tanggal atau jam lain yang tersedia.`
+        const statusLabel = s.status === 'MENUNGGU_PERSETUJUAN' ? 'Antrean Menunggu Persetujuan' : 'Sudah Dipesan / Disetujui'
+        return `Kendaraan "${vehicleName}" sudah terisi jadwal pada waktu tersebut (${statusLabel} - Kode: ${s.bookingCode}, Tujuan: ${s.destinationName}). Peminjaman ganda tidak diperbolehkan. Mohon pilih tanggal hijau yang tersedia.`
       }
     }
     return null
   }, [departureValue, returnValue, schedules, vehicleName])
+
+  // Beritahu komponen induk saat status bentrok berubah
+  useEffect(() => {
+    if (onClashChange) {
+      onClashChange(Boolean(clashWarning), clashWarning)
+    }
+  }, [clashWarning, onClashChange])
 
   const nextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
@@ -184,7 +202,7 @@ export function VehicleCalendarPicker({
         padding: '1.25rem',
         marginTop: '1rem',
         marginBottom: '1rem',
-        boxShadow: '0 4px 14px rgba(13, 148, 136, 0.08)',
+        boxShadow: clashWarning ? '0 4px 14px rgba(239, 68, 68, 0.15)' : '0 4px 14px rgba(13, 148, 136, 0.08)',
       }}
     >
       {/* Header Kalender */}
@@ -194,7 +212,7 @@ export function VehicleCalendarPicker({
             <span>📅</span> Kalender Ketersediaan: <span style={{ color: '#0d9488' }}>{vehicleName}</span> ({plateNumber})
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-            Klik tanggal hijau untuk langsung menentukan jadwal keberangkatan & kepulangan Anda.
+            Hanya tanggal <strong>hijau</strong> yang dapat dipilih. Tanggal merah/oranye terkunci agar tidak terjadi peminjaman ganda.
           </div>
         </div>
 
@@ -225,15 +243,15 @@ export function VehicleCalendarPicker({
       <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           <span style={{ width: '12px', height: '12px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '3px' }} />
-          <span style={{ color: '#166534', fontWeight: 600 }}>Tersedia (Hijau)</span>
+          <span style={{ color: '#166534', fontWeight: 600 }}>Tersedia (Bisa Dipilih)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           <span style={{ width: '12px', height: '12px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '3px' }} />
-          <span style={{ color: '#991b1b', fontWeight: 600 }}>Sudah Dipesan (Merah)</span>
+          <span style={{ color: '#991b1b', fontWeight: 600 }}>Sudah Dipesan (Terkunci)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           <span style={{ width: '12px', height: '12px', background: '#ffedd5', border: '1px solid #fdba74', borderRadius: '3px' }} />
-          <span style={{ color: '#9a3412', fontWeight: 600 }}>Antrean Ajuan (Oranye)</span>
+          <span style={{ color: '#9a3412', fontWeight: 600 }}>Antrean Ajuan (Terkunci)</span>
         </div>
       </div>
 
@@ -259,8 +277,10 @@ export function VehicleCalendarPicker({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
             {calendarDays.map((item, idx) => {
               if (!item.date || item.dayNumber === null) {
-                return <div key={`empty-${idx}`} style={{ minHeight: '38px', background: 'transparent' }} />
+                return <div key={`empty-${idx}`} style={{ minHeight: '40px', background: 'transparent' }} />
               }
+
+              const isUnavailable = item.isPast || item.isBooked || item.isPending
 
               let bg = '#dcfce7' // Default Hijau (Tersedia)
               let border = '#86efac'
@@ -279,25 +299,31 @@ export function VehicleCalendarPicker({
                 border = '#fca5a5'
                 textColor = '#991b1b'
                 cursor = 'not-allowed'
-                title = `Sudah dibooking: ${item.bookedInfo?.destinationName} (${item.bookedInfo?.applicantName})`
+                title = `TERKUNCI: Sudah dipesan untuk ${item.bookedInfo?.destinationName} (${item.bookedInfo?.applicantName})`
               } else if (item.isPending) {
                 bg = '#ffedd5' // Oranye
                 border = '#fdba74'
                 textColor = '#9a3412'
-                title = `Menunggu persetujuan: ${item.bookedInfo?.destinationName}`
+                cursor = 'not-allowed'
+                title = `TERKUNCI: Ada antrean pengajuan (${item.bookedInfo?.destinationName})`
               }
 
+              // Hanya tampilkan DIPILIH jika tanggal tersebut BUKAN tanggal terkunci
               const isSelected =
-                Boolean(item.dateString && departureValue && departureValue.startsWith(item.dateString)) ||
-                Boolean(item.dateString && returnValue && returnValue.startsWith(item.dateString))
+                !isUnavailable &&
+                ((departureValue && departureValue.startsWith(item.dateString!)) ||
+                  (returnValue && returnValue.startsWith(item.dateString!)))
 
               return (
                 <div
                   key={`day-${item.dayNumber}`}
                   title={title}
                   onClick={() => {
-                    if (item.isPast || item.isBooked || !item.dateString) return
-                    
+                    // MUTLAK: Jika sudah ada peminjaman (merah/oranye) atau lewat, DILARANG DIPILIH
+                    if (isUnavailable || !item.dateString) {
+                      return
+                    }
+
                     // One-Click: Otomatis set tanggal berangkat jam 08:00 dan kembali jam 16:00
                     const newDep = `${item.dateString}T08:00`
                     const newRet = `${item.dateString}T16:00`
@@ -310,7 +336,7 @@ export function VehicleCalendarPicker({
                     }
                   }}
                   style={{
-                    minHeight: '38px',
+                    minHeight: '40px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -325,14 +351,24 @@ export function VehicleCalendarPicker({
                     position: 'relative',
                     transition: 'all 0.15s ease',
                     boxShadow: isSelected ? '0 2px 6px rgba(13, 148, 136, 0.35)' : 'none',
+                    opacity: isUnavailable && !item.isPast ? 0.9 : item.isPast ? 0.6 : 1,
                   }}
                 >
-                  <span>{item.dayNumber}</span>
+                  <span style={{ fontSize: '0.8rem' }}>{item.dayNumber}</span>
                   {item.isBooked && (
-                    <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#ef4444' }}>PADAT</span>
+                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#dc2626', letterSpacing: '-0.02em' }}>
+                      TERKUNCI
+                    </span>
+                  )}
+                  {item.isPending && (
+                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#c2410c', letterSpacing: '-0.02em' }}>
+                      ANTREAN
+                    </span>
                   )}
                   {isSelected && (
-                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ffffff' }}>DIPILIH</span>
+                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#ffffff' }}>
+                      DIPILIH
+                    </span>
                   )}
                 </div>
               )
@@ -341,25 +377,29 @@ export function VehicleCalendarPicker({
         </div>
       )}
 
-      {/* Peringatan Bentrok Jadwal */}
+      {/* Peringatan Bentrok Jadwal Realtime (BLOKIR) */}
       {clashWarning && (
         <div
           style={{
-            background: '#fee2e2',
-            border: '1px solid #f87171',
-            color: '#991b1b',
+            background: '#fef2f2',
+            border: '1.5px solid #ef4444',
+            color: '#b91c1c',
             borderRadius: 'var(--radius-md)',
-            padding: '0.625rem 0.875rem',
-            fontSize: '0.8rem',
+            padding: '0.875rem 1rem',
+            fontSize: '0.8125rem',
             fontWeight: 600,
             marginBottom: '0.875rem',
             display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
+            alignItems: 'flex-start',
+            gap: '0.625rem',
+            lineHeight: 1.5,
           }}
         >
-          <span>⚠️</span>
-          <div>{clashWarning}</div>
+          <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>⛔</span>
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: '0.2rem' }}>JADWAL BENTROK / TIDAK TERSEDIA</div>
+            <div>{clashWarning}</div>
+          </div>
         </div>
       )}
 
@@ -369,16 +409,17 @@ export function VehicleCalendarPicker({
           marginTop: '0.875rem',
           paddingTop: '0.875rem',
           borderTop: '1px dashed #cbd5e1',
-          background: '#f8fafc',
+          background: clashWarning ? '#fff5f5' : '#f8fafc',
           padding: '1rem',
           borderRadius: 'var(--radius-md, 8px)',
+          border: clashWarning ? '1px solid #fecaca' : 'none',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b' }}>
-            ⏱️ Tentukan Waktu Berangkat & Pulang:
+            ⏱️ Tentukan Jam Berangkat & Pulang:
           </div>
-          {durationText && (
+          {durationText && !clashWarning && (
             <span className="badge status-approved" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
               {durationText}
             </span>
@@ -392,7 +433,7 @@ export function VehicleCalendarPicker({
             </label>
             <input
               type="datetime-local"
-              className={`form-input${departureError ? ' error' : ''}`}
+              className={`form-input${departureError || clashWarning ? ' error' : ''}`}
               min={minDatetime}
               value={departureValue}
               onChange={(e) => onDepartureChange(e.target.value)}
@@ -411,7 +452,7 @@ export function VehicleCalendarPicker({
             </label>
             <input
               type="datetime-local"
-              className={`form-input${returnError ? ' error' : ''}`}
+              className={`form-input${returnError || clashWarning ? ' error' : ''}`}
               min={departureValue || minDatetime}
               value={returnValue}
               onChange={(e) => onReturnChange(e.target.value)}

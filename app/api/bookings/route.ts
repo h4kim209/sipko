@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         vehicleId: data.vehicleId,
         status: {
           in: [
+            'MENUNGGU_PERSETUJUAN',
             'DISETUJUI',
             'MENUNGGU_PEMERIKSAAN_AWAL',
             'SIAP_BERANGKAT',
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     if (conflictingApproved) {
       return NextResponse.json(
         {
-          error: 'Kendaraan sudah dijadwalkan pada rentang waktu tersebut. Silakan pilih waktu lain.',
+          error: 'Kendaraan sudah memiliki jadwal peminjaman pada rentang tanggal/jam tersebut. Peminjaman ganda tidak diperbolehkan. Silakan pilih tanggal atau armada lain yang tersedia.',
         },
         { status: 409 }
       )

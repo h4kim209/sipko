@@ -114,6 +114,7 @@ export default function PengajuanPage() {
     hasSppd: false,
     sppdPhotoBase64: '',
   })
+  const [clashError, setClashError] = useState<string | null>(null)
 
   // Load kendaraan tersedia
   useEffect(() => {
@@ -203,6 +204,9 @@ export default function PengajuanPage() {
       new Date(form.returnDatetime) <= new Date(form.departureDatetime)
     )
       errs.returnDatetime = 'Waktu kembali harus setelah waktu berangkat.'
+    if (clashError) {
+      errs.departureDatetime = clashError
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -566,6 +570,7 @@ export default function PengajuanPage() {
                         minDatetime={minDatetime}
                         departureError={errors.departureDatetime}
                         returnError={errors.returnDatetime}
+                        onClashChange={(hasClash, msg) => setClashError(hasClash ? msg : null)}
                         onDepartureChange={(val) => setForm((f) => ({ ...f, departureDatetime: val }))}
                         onReturnChange={(val) => setForm((f) => ({ ...f, returnDatetime: val }))}
                         onSelectDateRange={(dep, ret) => {
