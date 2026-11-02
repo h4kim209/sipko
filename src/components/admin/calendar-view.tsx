@@ -1,7 +1,7 @@
 'use client'
-// src/components/admin/calendar-view.tsx — Timeline & kalender kendaraan rentang 1 bulan penuh
+// src/components/admin/calendar-view.tsx — Kalender Bulanan Grid Adaptif & Responsif (Web & Mobile)
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 
 type Vehicle = { id: string; name: string; plateNumber: string; brand?: string; type?: string }
@@ -17,15 +17,15 @@ type Booking = {
   driverName?: string | null
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  MENUNGGU_PERSETUJUAN: { label: 'Menunggu Persetujuan', color: '#b45309', bg: '#fef3c7' },
-  DISETUJUI: { label: 'Disetujui', color: '#047857', bg: '#d1fae5' },
-  MENUNGGU_PEMERIKSAAN_AWAL: { label: 'Pemeriksaan Awal', color: '#4338ca', bg: '#e0e7ff' },
-  SIAP_BERANGKAT: { label: 'Siap Berangkat', color: '#0369a1', bg: '#e0f2fe' },
-  SEDANG_DIGUNAKAN: { label: 'Sedang Digunakan', color: '#0f766e', bg: '#ccfbf1' },
-  MENUNGGU_PEMERIKSAAN_PENGEMBALIAN: { label: 'Pemeriksaan Kembali', color: '#c2410c', bg: '#ffedd5' },
-  PERLU_PERBAIKAN_BUKTI: { label: 'Perlu Perbaikan Bukti', color: '#b91c1c', bg: '#fee2e2' },
-  SELESAI: { label: 'Selesai', color: '#374151', bg: '#f3f4f6' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  MENUNGGU_PERSETUJUAN: { label: 'Menunggu Persetujuan', color: '#b45309', bg: '#fef3c7', dot: '#f59e0b' },
+  DISETUJUI: { label: 'Disetujui', color: '#047857', bg: '#d1fae5', dot: '#10b981' },
+  MENUNGGU_PEMERIKSAAN_AWAL: { label: 'Pemeriksaan Awal', color: '#4338ca', bg: '#e0e7ff', dot: '#6366f1' },
+  SIAP_BERANGKAT: { label: 'Siap Berangkat', color: '#0369a1', bg: '#e0f2fe', dot: '#0ea5e9' },
+  SEDANG_DIGUNAKAN: { label: 'Sedang Digunakan', color: '#0f766e', bg: '#ccfbf1', dot: '#0d9488' },
+  MENUNGGU_PEMERIKSAAN_PENGEMBALIAN: { label: 'Pemeriksaan Kembali', color: '#c2410c', bg: '#ffedd5', dot: '#f97316' },
+  PERLU_PERBAIKAN_BUKTI: { label: 'Perlu Perbaikan Bukti', color: '#b91c1c', bg: '#fee2e2', dot: '#ef4444' },
+  SELESAI: { label: 'Selesai', color: '#374151', bg: '#f3f4f6', dot: '#6b7280' },
 }
 
 const MONTH_NAMES = [
@@ -33,47 +33,76 @@ const MONTH_NAMES = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ]
 
-const DAY_NAMES = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB']
+// Dimulai dari Minggu (Min) sampai Sabtu (Sab) seperti kalender standar
+const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
 type Props = { vehicles: Vehicle[]; bookings: Booking[] }
 
 export function CalendarView({ vehicles, bookings }: Props) {
-  // Rentang bulan yang dipilih (default: bulan ini)
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
-  })
+  const [currentDate, setCurrentDate] = useState(() => new Date())
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
+  const [vehicleFilter, setVehicleFilter] = useState<string>('ALL')
 
-  // Tipe tampilan: matriks timeline armada atau kalender bulanan
-  const [viewMode, setViewMode] = useState<'matrix' | 'calendar'>('matrix')
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
 
-  const matrixScrollRef = useRef<HTMLDivElement>(null)
-  const todayColumnRef = useRef<HTMLTableCellElement>(null)
+  // Filter booking berdasarkan kendaraan jika filter aktif
+  const filteredBookings = useMemo(() => {
+    if (vehicleFilter === 'ALL') return bookings
+    return bookings.filter((b) => b.vehicleId === vehicleFilter)
+  }, [bookings, vehicleFilter])
 
-  // Hitung semua tanggal dalam bulan yang aktif (1 s/d 28/29/30/31)
-  const daysInMonth = useMemo(() => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const totalDays = new Date(year, month + 1, 0).getDate()
+  // Menghasilkan sel-sel kalender (termasuk tanggal bulan sebelum dan sesudah agar genap kelipatan 7)
+  const calendarDays = useMemo(() => {
+    const firstDayIndex = new Date(year, month, 1).getDay() // 0 = Minggu
+    const lastDate = new Date(year, month + 1, 0).getDate()
+    const prevLastDate = new Date(year, month, 0).getDate()
 
-    return Array.from({ length: totalDays }, (_, i) => {
-      return new Date(year, month, i + 1)
-    })
-  }, [currentMonth])
+    const days: { date: Date; isCurrentMonth: boolean }[] = []
 
-  // Filter booking yang aktif di bulan terpilih
-  const monthBookings = useMemo(() => {
-    const year = currentMonth.getFullYear()
-    const month = currentMonth.getMonth()
-    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0)
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+    // Tanggal bulan sebelumnya (padding awal)
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      days.push({
+        date: new Date(year, month - 1, prevLastDate - i),
+        isCurrentMonth: false,
+      })
+    }
 
-    return bookings.filter((b) => {
+    // Tanggal bulan sekarang
+    for (let i = 1; i <= lastDate; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true,
+      })
+    }
+
+    // Tanggal bulan berikutnya (padding akhir hingga genap 35 atau 42 kotak)
+    const remaining = 7 - (days.length % 7)
+    if (remaining < 7) {
+      for (let i = 1; i <= remaining; i++) {
+        days.push({
+          date: new Date(year, month + 1, i),
+          isCurrentMonth: false,
+        })
+      }
+    }
+
+    return days
+  }, [year, month])
+
+  // Cari booking pada tanggal tertentu
+  const getBookingsForDate = (date: Date) => {
+    const start = new Date(date)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(date)
+    end.setHours(23, 59, 59, 999)
+
+    return filteredBookings.filter((b) => {
       const dep = new Date(b.departureDatetime)
       const ret = new Date(b.returnDatetime)
-      return dep <= endOfMonth && ret >= startOfMonth
+      return dep <= end && ret >= start
     })
-  }, [bookings, currentMonth])
+  }
 
   const isToday = (d: Date) => {
     const now = new Date()
@@ -84,59 +113,34 @@ export function CalendarView({ vehicles, bookings }: Props) {
     )
   }
 
-  // Auto-scroll ke kolom hari ini pada tampilan matriks jika di bulan sekarang
-  useEffect(() => {
-    if (viewMode === 'matrix' && todayColumnRef.current && matrixScrollRef.current) {
-      const offsetLeft = todayColumnRef.current.offsetLeft
-      matrixScrollRef.current.scrollTo({
-        left: Math.max(0, offsetLeft - 240),
-        behavior: 'smooth',
-      })
-    }
-  }, [currentMonth, viewMode])
-
-  const getBookingsForVehicleDay = (vehicleId: string, day: Date) => {
-    const dayStart = new Date(day)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(day)
-    dayEnd.setHours(23, 59, 59, 999)
-
-    return monthBookings.filter(
-      (b) =>
-        b.vehicleId === vehicleId &&
-        new Date(b.departureDatetime) <= dayEnd &&
-        new Date(b.returnDatetime) >= dayStart
-    )
-  }
-
-  const getBookingsForDay = (day: Date) => {
-    const dayStart = new Date(day)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(day)
-    dayEnd.setHours(23, 59, 59, 999)
-
-    return monthBookings.filter(
-      (b) =>
-        new Date(b.departureDatetime) <= dayEnd &&
-        new Date(b.returnDatetime) >= dayStart
+  const isSelected = (d: Date) => {
+    return (
+      d.getDate() === selectedDate.getDate() &&
+      d.getMonth() === selectedDate.getMonth() &&
+      d.getFullYear() === selectedDate.getFullYear()
     )
   }
 
   const prevMonth = () => {
-    setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+    setCurrentDate(new Date(year, month - 1, 1))
   }
 
   const nextMonth = () => {
-    setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))
+    setCurrentDate(new Date(year, month + 1, 1))
   }
 
-  const resetToday = () => {
+  const goToday = () => {
     const now = new Date()
-    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1))
+    setCurrentDate(new Date(now.getFullYear(), now.getMonth(), 1))
+    setSelectedDate(now)
   }
 
-  // Format jam singkat HH:mm
-  const formatTime = (isoString: string) => {
+  // Booking pada tanggal yang sedang di-klik/dipilih
+  const selectedDateBookings = useMemo(() => {
+    return getBookingsForDate(selectedDate)
+  }, [selectedDate, filteredBookings])
+
+  const formatShortTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('id-ID', {
       timeZone: 'Asia/Jakarta',
       hour: '2-digit',
@@ -145,435 +149,476 @@ export function CalendarView({ vehicles, bookings }: Props) {
   }
 
   return (
-    <div>
-      {/* Bar Navigasi 1 Bulan & Pengatur Tampilan */}
+    <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* CARD UTAMA KALENDER */}
       <div
+        className="card"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1.25rem',
           background: '#ffffff',
-          padding: '1rem 1.25rem',
-          borderRadius: 'var(--radius-xl, 14px)',
+          borderRadius: 'var(--radius-xl, 16px)',
           border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+          overflow: 'hidden',
         }}
       >
-        {/* Tombol Navigasi Bulan */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button className="btn btn-secondary btn-sm" onClick={prevMonth} title="Lihat bulan sebelumnya">
-            ← Bulan Sebelumnya
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={resetToday}>
-            Bulan Ini
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={nextMonth} title="Lihat bulan berikutnya">
-            Bulan Berikutnya →
-          </button>
-        </div>
-
-        {/* Judul Bulan & Ringkasan */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-            {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-            Rentang 1 Bulan Penuh (1 s.d. {daysInMonth.length} {MONTH_NAMES[currentMonth.getMonth()]}) •{' '}
-            <strong style={{ color: '#0d9488' }}>{monthBookings.length} Peminjaman Terjadwal</strong>
-          </div>
-        </div>
-
-        {/* Toggle Switcher Mode Tampilan */}
+        {/* HEADER KALENDER BULANAN */}
         <div
           style={{
-            display: 'inline-flex',
-            background: '#f1f5f9',
-            padding: '3px',
-            borderRadius: 'var(--radius-lg, 10px)',
-            border: '1px solid #e2e8f0',
+            padding: '1.25rem 1.5rem',
+            borderBottom: '1px solid #f1f5f9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
           }}
         >
-          <button
-            onClick={() => setViewMode('matrix')}
-            style={{
-              padding: '0.4rem 0.85rem',
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              borderRadius: '7px',
-              border: 'none',
-              cursor: 'pointer',
-              background: viewMode === 'matrix' ? '#ffffff' : 'transparent',
-              color: viewMode === 'matrix' ? '#0f172a' : '#64748b',
-              boxShadow: viewMode === 'matrix' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            📊 Matriks Armada (1 Bulan)
-          </button>
-          <button
-            onClick={() => setViewMode('calendar')}
-            style={{
-              padding: '0.4rem 0.85rem',
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              borderRadius: '7px',
-              border: 'none',
-              cursor: 'pointer',
-              background: viewMode === 'calendar' ? '#ffffff' : 'transparent',
-              color: viewMode === 'calendar' ? '#0f172a' : '#64748b',
-              boxShadow: viewMode === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            🗓️ Kalender Bulanan
-          </button>
-        </div>
-      </div>
+          {/* Judul Bulan & Tahun */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+              {MONTH_NAMES[month]} {year}
+            </div>
+            <button
+              onClick={goToday}
+              className="btn btn-secondary btn-sm"
+              style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', fontWeight: 700 }}
+            >
+              Hari Ini
+            </button>
+          </div>
 
-      {/* MODE 1: MATRIKS TIMELINE ARMADA 1 BULAN */}
-      {viewMode === 'matrix' ? (
-        <div
-          ref={matrixScrollRef}
-          className="table-wrapper"
-          style={{
-            overflowX: 'auto',
-            background: '#ffffff',
-            borderRadius: 'var(--radius-xl, 14px)',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-          }}
-        >
-          <table style={{ minWidth: `${180 + daysInMonth.length * 96}px`, borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead>
-              <tr>
-                <th
-                  style={{
-                    width: '180px',
-                    position: 'sticky',
-                    left: 0,
-                    background: '#f8fafc',
-                    zIndex: 10,
-                    borderRight: '2px solid #cbd5e1',
-                    borderBottom: '2px solid #e2e8f0',
-                    padding: '0.875rem 1rem',
-                    textAlign: 'left',
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    color: '#475569',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Armada Kendaraan
-                </th>
-                {daysInMonth.map((d) => {
-                  const dayToday = isToday(d)
-                  const isWeekend = d.getDay() === 0 || d.getDay() === 6
-                  return (
-                    <th
-                      key={d.toISOString()}
-                      ref={dayToday ? todayColumnRef : null}
-                      style={{
-                        textAlign: 'center',
-                        padding: '0.625rem 0.35rem',
-                        minWidth: '96px',
-                        maxWidth: '110px',
-                        background: dayToday ? '#ccfbf1' : isWeekend ? '#f8fafc' : '#ffffff',
-                        color: dayToday ? '#0f766e' : isWeekend ? '#dc2626' : '#1e293b',
-                        borderBottom: '2px solid #e2e8f0',
-                        borderRight: '1px solid #f1f5f9',
-                      }}
-                    >
-                      <div style={{ fontSize: '0.6875rem', fontWeight: 600, opacity: 0.85 }}>
-                        {DAY_NAMES[d.getDay()]}
-                      </div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: '1px' }}>
-                        {d.getDate()}
-                      </div>
-                      {dayToday && (
-                        <div
-                          style={{
-                            fontSize: '0.5625rem',
-                            fontWeight: 800,
-                            background: '#0d9488',
-                            color: '#ffffff',
-                            borderRadius: '4px',
-                            padding: '1px 4px',
-                            marginTop: '2px',
-                            display: 'inline-block',
-                          }}
-                        >
-                          HARI INI
-                        </div>
-                      )}
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
+          {/* Navigasi Bulan & Filter Armada */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Filter Armada */}
+            <select
+              value={vehicleFilter}
+              onChange={(e) => setVehicleFilter(e.target.value)}
+              className="form-select"
+              style={{ width: 'auto', padding: '0.35rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600 }}
+            >
+              <option value="ALL">🚗 Semua Armada ({vehicles.length})</option>
               {vehicles.map((v) => (
-                <tr key={v.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  {/* Kolom Sticky Kendaraan */}
-                  <td
-                    style={{
-                      position: 'sticky',
-                      left: 0,
-                      background: '#ffffff',
-                      zIndex: 9,
-                      borderRight: '2px solid #cbd5e1',
-                      borderBottom: '1px solid #f1f5f9',
-                      padding: '0.875rem 1rem',
-                      boxShadow: '2px 0 5px rgba(0,0,0,0.03)',
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f172a' }}>
-                      🚗 {v.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '0.725rem',
-                        fontFamily: 'monospace',
-                        color: '#64748b',
-                        marginTop: '2px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {v.plateNumber}
-                    </div>
-                  </td>
-
-                  {/* Sel per tanggal dalam 1 bulan */}
-                  {daysInMonth.map((d) => {
-                    const dayBookings = getBookingsForVehicleDay(v.id, d)
-                    const dayToday = isToday(d)
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6
-
-                    return (
-                      <td
-                        key={d.toISOString()}
-                        style={{
-                          padding: '0.375rem',
-                          verticalAlign: 'top',
-                          background: dayToday ? 'rgba(204, 251, 241, 0.25)' : isWeekend ? '#fafafa' : '#ffffff',
-                          borderRight: '1px solid #f1f5f9',
-                          borderBottom: '1px solid #f1f5f9',
-                          height: '92px',
-                        }}
-                      >
-                        {dayBookings.map((b) => {
-                          const conf = STATUS_CONFIG[b.status] || {
-                            label: b.status,
-                            color: '#4b5563',
-                            bg: '#f3f4f6',
-                          }
-                          return (
-                            <Link
-                              key={b.id}
-                              href={`/admin/pengajuan/${b.id}`}
-                              style={{
-                                display: 'block',
-                                padding: '0.35rem 0.45rem',
-                                marginBottom: '0.3rem',
-                                borderRadius: '6px',
-                                background: conf.bg,
-                                border: `1px solid ${conf.color}40`,
-                                color: conf.color,
-                                textDecoration: 'none',
-                                lineHeight: 1.25,
-                                fontSize: '0.675rem',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                                transition: 'transform 0.1s ease',
-                              }}
-                              title={`[${b.bookingCode}] ${b.applicantName} → ${b.destinationName}\nJadwal: ${formatTime(b.departureDatetime)} - ${formatTime(b.returnDatetime)}\nStatus: ${conf.label}`}
-                            >
-                              <div style={{ fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                👤 {b.applicantName.split(' ')[0]}
-                              </div>
-                              <div style={{ opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
-                                📍 {b.destinationName.slice(0, 12)}
-                              </div>
-                              <div style={{ fontSize: '0.6rem', fontWeight: 600, opacity: 0.8, marginTop: '2px' }}>
-                                ⏱️ {formatTime(b.departureDatetime)}
-                              </div>
-                            </Link>
-                          )
-                        })}
-                      </td>
-                    )
-                  })}
-                </tr>
+                <option key={v.id} value={v.id}>
+                  {v.name} ({v.plateNumber})
+                </option>
               ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* MODE 2: GRID KALENDER BULANAN (7 Kolom SEN - MIN) */
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: 'var(--radius-xl, 14px)',
-            border: '1px solid #e2e8f0',
-            padding: '1.25rem',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-          }}
-        >
-          {/* Header 7 Hari */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '6px',
-              textAlign: 'center',
-              fontWeight: 700,
-              fontSize: '0.8125rem',
-              marginBottom: '8px',
-              color: '#475569',
-            }}
-          >
-            {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((day, idx) => (
-              <div
-                key={day}
+            </select>
+
+            {/* Tombol Panah Bulan */}
+            <div style={{ display: 'inline-flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+              <button
+                onClick={prevMonth}
+                title="Bulan sebelumnya"
                 style={{
-                  padding: '0.5rem',
-                  background: idx >= 5 ? '#fef2f2' : '#f8fafc',
-                  color: idx >= 5 ? '#dc2626' : '#334155',
-                  borderRadius: '6px',
+                  background: '#ffffff',
+                  border: 'none',
+                  borderRight: '1px solid #cbd5e1',
+                  padding: '0.4rem 0.75rem',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  color: '#334155',
                 }}
               >
-                {day}
-              </div>
-            ))}
+                ▲
+              </button>
+              <button
+                onClick={nextMonth}
+                title="Bulan berikutnya"
+                style={{
+                  background: '#ffffff',
+                  border: 'none',
+                  padding: '0.4rem 0.75rem',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  color: '#334155',
+                }}
+              >
+                ▼
+              </button>
+            </div>
           </div>
+        </div>
 
-          {/* Kotak Tanggal Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-            {/* Offset awal bulan agar hari jatuh tepat pada kolomnya (Senin = 1, Minggu = 7) */}
-            {(() => {
-              const firstDayOfWeek = daysInMonth[0].getDay() // 0 = Min, 1 = Sen
-              const emptySlots = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
-              return Array.from({ length: emptySlots }).map((_, i) => (
-                <div key={`empty-${i}`} style={{ minHeight: '110px', background: '#f8fafc', borderRadius: '8px', opacity: 0.4 }} />
-              ))
-            })()}
+        {/* NAMA HARI (Min, Sen, Sel, Rab, Kam, Jum, Sab) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            background: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+            textAlign: 'center',
+            fontWeight: 700,
+            fontSize: '0.8125rem',
+            color: '#475569',
+            padding: '0.625rem 0',
+          }}
+        >
+          {DAY_LABELS.map((day, idx) => (
+            <div key={day} style={{ color: idx === 0 ? '#dc2626' : idx === 6 ? '#2563eb' : '#475569' }}>
+              {day}
+            </div>
+          ))}
+        </div>
 
-            {daysInMonth.map((d) => {
-              const dayBookings = getBookingsForDay(d)
-              const dayToday = isToday(d)
-              const isWeekend = d.getDay() === 0 || d.getDay() === 6
+        {/* GRID TANGGAL KALENDER */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            borderCollapse: 'collapse',
+            background: '#e2e8f0',
+            gap: '1px',
+          }}
+        >
+          {calendarDays.map((item, index) => {
+            const dayBookings = getBookingsForDate(item.date)
+            const dayToday = isToday(item.date)
+            const daySelected = isSelected(item.date)
+            const isSunday = item.date.getDay() === 0
+            const isSaturday = item.date.getDay() === 6
 
-              return (
-                <div
-                  key={d.toISOString()}
-                  style={{
-                    minHeight: '110px',
-                    padding: '0.5rem',
-                    background: dayToday ? '#f0fdfa' : isWeekend ? '#fffafb' : '#ffffff',
-                    border: dayToday ? '2px solid #0d9488' : '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.25rem',
-                  }}
-                >
-                  {/* Angka Tanggal */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            return (
+              <div
+                key={index}
+                onClick={() => {
+                  setSelectedDate(item.date)
+                  if (!item.isCurrentMonth) {
+                    setCurrentDate(new Date(item.date.getFullYear(), item.date.getMonth(), 1))
+                  }
+                }}
+                style={{
+                  background: daySelected
+                    ? '#eff6ff'
+                    : dayToday
+                    ? '#f0fdfa'
+                    : item.isCurrentMonth
+                    ? '#ffffff'
+                    : '#f8fafc',
+                  minHeight: '85px',
+                  padding: '0.375rem 0.5rem',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  outline: daySelected ? '2px solid #2563eb' : dayToday ? '2px solid #0d9488' : 'none',
+                  outlineOffset: '-2px',
+                  transition: 'background 0.15s ease',
+                  opacity: item.isCurrentMonth ? 1 : 0.45,
+                }}
+              >
+                {/* Baris Atas: Angka Tanggal & Badge Hari Ini */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span
+                    style={{
+                      fontSize: '0.925rem',
+                      fontWeight: dayToday || daySelected ? 800 : 600,
+                      color: daySelected
+                        ? '#1d4ed8'
+                        : dayToday
+                        ? '#0f766e'
+                        : isSunday
+                        ? '#dc2626'
+                        : isSaturday
+                        ? '#2563eb'
+                        : '#1e293b',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '24px',
+                      height: '24px',
+                      borderRadius: '6px',
+                      background: dayToday ? '#ccfbf1' : 'transparent',
+                    }}
+                  >
+                    {item.date.getDate()}
+                  </span>
+
+                  {dayToday && (
                     <span
                       style={{
-                        fontSize: '0.875rem',
+                        fontSize: '0.6rem',
                         fontWeight: 800,
-                        color: dayToday ? '#0d9488' : isWeekend ? '#dc2626' : '#1e293b',
+                        color: '#0d9488',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.02em',
                       }}
                     >
-                      {d.getDate()}
+                      Kini
                     </span>
-                    {dayToday && (
-                      <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#0d9488' }}>
-                        Hari Ini
-                      </span>
-                    )}
-                    {dayBookings.length > 0 && (
-                      <span
-                        style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          background: '#e2e8f0',
-                          borderRadius: '10px',
-                          padding: '1px 6px',
-                          color: '#334155',
-                        }}
-                      >
-                        {dayBookings.length} armada
-                      </span>
-                    )}
-                  </div>
+                  )}
+                </div>
 
-                  {/* Daftar Booking pada tanggal tersebut */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '2px' }}>
-                    {dayBookings.slice(0, 3).map((b) => {
+                {/* Indikator Jadwal Armada pada Kotak Tanggal */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
+                  {/* Tampilan Desktop: Pill Ringkas Armada */}
+                  <div className="hidden md:flex" style={{ flexDirection: 'column', gap: '2px' }}>
+                    {dayBookings.slice(0, 2).map((b) => {
                       const veh = vehicles.find((v) => v.id === b.vehicleId)
                       const conf = STATUS_CONFIG[b.status] || { color: '#334155', bg: '#f1f5f9' }
                       return (
-                        <Link
+                        <div
                           key={b.id}
-                          href={`/admin/pengajuan/${b.id}`}
                           style={{
-                            display: 'block',
-                            padding: '0.25rem 0.35rem',
+                            fontSize: '0.625rem',
+                            padding: '2px 4px',
                             borderRadius: '4px',
                             background: conf.bg,
-                            border: `1px solid ${conf.color}40`,
                             color: conf.color,
-                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                             lineHeight: 1.2,
-                            textDecoration: 'none',
-                            fontWeight: 600,
                           }}
-                          title={`[${b.bookingCode}] ${veh?.name || 'Mobil'} - ${b.applicantName} → ${b.destinationName}`}
+                          title={`[${b.bookingCode}] ${veh?.name || 'Mobil'} - ${b.applicantName}`}
                         >
-                          🚗 <strong>{veh?.name || 'Armada'}</strong>: {b.applicantName.split(' ')[0]} ({b.destinationName.slice(0, 10)})
-                        </Link>
+                          🚗 {veh?.name?.split(' ')[0] || 'Armada'}: {b.applicantName.split(' ')[0]}
+                        </div>
                       )
                     })}
-                    {dayBookings.length > 3 && (
-                      <div style={{ fontSize: '0.625rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
-                        +{dayBookings.length - 3} lainnya...
+                    {dayBookings.length > 2 && (
+                      <div style={{ fontSize: '0.6rem', color: '#0d9488', fontWeight: 800, textAlign: 'center' }}>
+                        +{dayBookings.length - 2} lagi
                       </div>
                     )}
+                  </div>
+
+                  {/* Tampilan Mobile: Titik Status Berwarna / Counter */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '4px',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {dayBookings.slice(0, 4).map((b) => {
+                      const conf = STATUS_CONFIG[b.status] || { dot: '#64748b' }
+                      return (
+                        <span
+                          key={b.id}
+                          style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: conf.dot,
+                            display: 'inline-block',
+                          }}
+                          title={b.applicantName}
+                        />
+                      )
+                    })}
+                    {dayBookings.length > 0 && (
+                      <span
+                        style={{
+                          fontSize: '0.625rem',
+                          fontWeight: 800,
+                          color: '#0d9488',
+                          marginLeft: '2px',
+                        }}
+                      >
+                        {dayBookings.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* DETAIL JADWAL TANGGAL TERPILIH */}
+      <div
+        className="card"
+        style={{
+          background: '#ffffff',
+          borderRadius: 'var(--radius-xl, 16px)',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          padding: '1.25rem 1.5rem',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            paddingBottom: '0.875rem',
+            borderBottom: '1px solid #f1f5f9',
+            marginBottom: '1rem',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+              Rincian Penggunaan Armada
+            </div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0' }}>
+              📅 {selectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </h3>
+          </div>
+
+          <span
+            style={{
+              padding: '0.35rem 0.75rem',
+              borderRadius: '999px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: selectedDateBookings.length > 0 ? '#ccfbf1' : '#f1f5f9',
+              color: selectedDateBookings.length > 0 ? '#0f766e' : '#64748b',
+            }}
+          >
+            {selectedDateBookings.length > 0
+              ? `${selectedDateBookings.length} Armada Terjadwal`
+              : 'Semua Armada Tersedia'}
+          </span>
+        </div>
+
+        {selectedDateBookings.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '2rem 1rem',
+              color: '#64748b',
+              background: '#f8fafc',
+              borderRadius: 'var(--radius-lg, 12px)',
+              border: '1px dashed #cbd5e1',
+            }}
+          >
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
+            <div style={{ fontWeight: 700, color: '#1e293b' }}>Tidak ada peminjaman pada tanggal ini</div>
+            <p style={{ fontSize: '0.8125rem', marginTop: '0.25rem', color: '#64748b' }}>
+              Seluruh armada kendaraan operasional berstatus siap dan tersedia untuk dipinjam.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+            {selectedDateBookings.map((b) => {
+              const veh = vehicles.find((v) => v.id === b.vehicleId)
+              const conf = STATUS_CONFIG[b.status] || { label: b.status, color: '#334155', bg: '#f1f5f9', dot: '#64748b' }
+
+              return (
+                <div
+                  key={b.id}
+                  style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #e2e8f0',
+                    borderRadius: 'var(--radius-lg, 12px)',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                  }}
+                >
+                  <div>
+                    {/* Header Item: Kendaraan & Status */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>
+                          🚗 {veh?.name || 'Kendaraan Dinas'}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace', fontWeight: 600 }}>
+                          {veh?.plateNumber} • Kode: <strong>{b.bookingCode}</strong>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '6px',
+                          fontSize: '0.675rem',
+                          fontWeight: 700,
+                          background: conf.bg,
+                          color: conf.color,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {conf.label}
+                      </span>
+                    </div>
+
+                    {/* Informasi Pemohon & Jadwal */}
+                    <div
+                      style={{
+                        marginTop: '0.75rem',
+                        padding: '0.625rem',
+                        background: '#f8fafc',
+                        borderRadius: '8px',
+                        fontSize: '0.8125rem',
+                        display: 'grid',
+                        gap: '0.375rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <span style={{ color: '#64748b', width: '80px', flexShrink: 0 }}>👤 Pemohon:</span>
+                        <strong style={{ color: '#0f172a' }}>{b.applicantName}</strong>
+                      </div>
+                      {b.driverName && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <span style={{ color: '#64748b', width: '80px', flexShrink: 0 }}>👨‍✈️ Pengemudi:</span>
+                          <span style={{ color: '#334155' }}>{b.driverName}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <span style={{ color: '#64748b', width: '80px', flexShrink: 0 }}>📍 Tujuan:</span>
+                        <span style={{ color: '#334155', fontWeight: 600 }}>{b.destinationName}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <span style={{ color: '#64748b', width: '80px', flexShrink: 0 }}>⏱️ Jadwal:</span>
+                        <span style={{ color: '#0d9488', fontWeight: 700 }}>
+                          {formatShortTime(b.departureDatetime)} — {formatShortTime(b.returnDatetime)} WIB
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tombol Aksi */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
+                    <Link
+                      href={`/admin/pengajuan/${b.id}`}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                    >
+                      Buka Rincian Pengajuan →
+                    </Link>
                   </div>
                 </div>
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Legend Status Peminjaman */}
+      {/* KETERANGAN WARNA STATUS */}
       <div
         style={{
           display: 'flex',
           gap: '1rem',
           flexWrap: 'wrap',
-          marginTop: '1.25rem',
-          padding: '0.875rem 1rem',
+          padding: '0.875rem 1.25rem',
           background: '#ffffff',
-          borderRadius: 'var(--radius-lg, 10px)',
+          borderRadius: 'var(--radius-lg, 12px)',
           border: '1px solid #e2e8f0',
           fontSize: '0.75rem',
         }}
       >
-        <span style={{ fontWeight: 700, color: '#334155' }}>Keterangan Status:</span>
+        <span style={{ fontWeight: 700, color: '#334155' }}>Keterangan Warna:</span>
         {Object.entries(STATUS_CONFIG).map(([status, conf]) => (
           <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            <div
+            <span
               style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '3px',
-                background: conf.bg,
-                border: `1.5px solid ${conf.color}`,
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: conf.dot,
+                display: 'inline-block',
               }}
             />
             <span style={{ color: '#475569', fontWeight: 500 }}>{conf.label}</span>
