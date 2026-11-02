@@ -76,6 +76,17 @@ export default function PengajuanPage() {
   const [geocodeQuery, setGeocodeQuery] = useState('')
   const [showGeoDropdown, setShowGeoDropdown] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [passengerInput, setPassengerInput] = useState('')
+
+  const handleSppdPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setForm((f) => ({ ...f, sppdPhotoBase64: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   const SCHOOL_ADDRESS = 'Jl. Arief Rahman Hakim No.35, Cigadung, Kec. Subang, Kabupaten Subang, Jawa Barat 41212'
 
@@ -415,15 +426,24 @@ export default function PengajuanPage() {
                 </h3>
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Nama Lengkap <span className="required">*</span></label>
-                    <input
-                      className={inputClass('applicantName')}
-                      type="text"
-                      placeholder="Masukkan nama lengkap"
+                    <label className="form-label">Nama Lengkap Guru / Staf <span className="required">*</span></label>
+                    <EmployeeCombobox
                       value={form.applicantName}
-                      onChange={(e) => setForm((f) => ({ ...f, applicantName: e.target.value }))}
+                      onChange={(val) => setForm((f) => ({ ...f, applicantName: val }))}
+                      onSelectEmployee={(emp) => {
+                        setForm((f) => ({
+                          ...f,
+                          applicantName: emp.name,
+                          applicantNip: emp.nip || '',
+                          applicantPhoneWa: emp.phoneWa || f.applicantPhoneWa,
+                          applicantJabatan: emp.jabatan || emp.pangkatGol || f.applicantJabatan || 'Guru / Tendik',
+                          applicantUnit: emp.unit || f.applicantUnit || 'SMK Negeri 1 Subang',
+                        }))
+                      }}
+                      placeholder="Cari nama guru atau staf dari daftar..."
                     />
                     {errors.applicantName && <span className="form-error">⚠ {errors.applicantName}</span>}
+                    <span className="form-hint">Ketik untuk mencari dari daftar guru, NIP & No. WhatsApp akan terisi otomatis.</span>
                   </div>
 
                   <div className="grid-2">
