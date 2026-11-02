@@ -63,15 +63,11 @@ export function EmployeeCombobox({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Filter daftar guru berdasarkan input
+  // Filter daftar guru berdasarkan input nama saja demi privasi
   const filteredEmployees = employees.filter((emp) => {
     if (!value) return true
     const q = value.toLowerCase()
-    return (
-      emp.name.toLowerCase().includes(q) ||
-      (emp.nip && emp.nip.includes(q)) ||
-      (emp.phoneWa && emp.phoneWa.includes(q))
-    )
+    return emp.name.toLowerCase().includes(q)
   })
 
   return (
@@ -137,13 +133,8 @@ export function EmployeeCombobox({
                   e.currentTarget.style.background = '#ffffff'
                 }}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--color-navy)' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#0f172a' }}>
                   {emp.name}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', gap: '0.75rem' }}>
-                  {emp.nip && <span>NIP: {emp.nip}</span>}
-                  {emp.phoneWa && <span>WA: {emp.phoneWa}</span>}
-                  {emp.pangkatGol && <span>({emp.pangkatGol})</span>}
                 </div>
               </div>
             ))

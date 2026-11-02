@@ -90,6 +90,11 @@ export async function getApproverPhoneNumbers(): Promise<ApproverRecipient[]> {
 export const WA_TEMPLATES = {
   bookingCreatedApplicant: (data: {
     nama: string
+    nip?: string
+    jabatan?: string
+    kendaraan?: string
+    supir?: string
+    penumpang?: string
     waktu_pinjam: string
     waktu_kembali: string
     tujuan: string
@@ -99,16 +104,18 @@ export const WA_TEMPLATES = {
   }) => `SIPKO — Sistem Peminjaman Kendaraan Operasional
 Assalamu'alaikum Bapak/Ibu ${data.nama}.
 
-Pengajuan peminjaman kendaraan operasional berhasil dikirim.
+Pengajuan peminjaman kendaraan operasional berhasil dikirim dengan rincian data Anda:
 
+👤 Pemohon: *${data.nama}*${data.nip ? `\n🪪 NIP: ${data.nip}` : ''}${data.jabatan ? `\n💼 Jabatan: ${data.jabatan}` : ''}${data.kendaraan ? `\n🚙 Kendaraan: ${data.kendaraan}` : ''}${data.supir ? `\n🚗 Pengemudi/Supir: ${data.supir}` : ''}${data.penumpang ? `\n👥 Penumpang: ${data.penumpang}` : ''}
 📅 Berangkat: ${data.waktu_pinjam}
 📅 Kembali: ${data.waktu_kembali}
 📍 Tujuan: ${data.tujuan}
 🛣️ Estimasi Jarak: ${data.jarak_km} km
-🔖 Kode Booking: ${data.kode_booking}
+🔖 Kode Booking: *${data.kode_booking}*
 
-Status: Menunggu Persetujuan.
-Silakan cek status melalui ${data.app_url}
+Status saat ini: *Menunggu Persetujuan*.
+Silakan pantau perkembangan status peminjaman melalui:
+${data.app_url}
 
 SIPKO | SMKN 1 Subang`,
 
