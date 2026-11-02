@@ -59,6 +59,16 @@ export const CreateBookingSchema = z
       .string()
       .datetime({ offset: true, message: 'Format tanggal kembali tidak valid.' }),
     additionalNotes: z.string().max(1000).optional().or(z.literal('')),
+    // Manifesting
+    driverName: z.string().max(255).optional().or(z.literal('')),
+    driverPhone: z.string().max(20).optional().or(z.literal('')),
+    passengerCount: z.number().int().min(1).max(50).optional(),
+    passengers: z.array(z.string()).optional(),
+    passengerNotes: z.string().max(1000).optional().or(z.literal('')),
+    // SPPD
+    hasSppd: z.boolean().optional(),
+    sppdPhotoBase64: z.string().optional().or(z.literal('')),
+    sppdPhotoPath: z.string().optional().or(z.literal('')),
   })
   .refine(
     (data) => new Date(data.returnDatetime) > new Date(data.departureDatetime),
