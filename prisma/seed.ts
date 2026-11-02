@@ -148,6 +148,46 @@ async function main() {
   }
   console.log('  ✅ Pengaturan sistem default dibuat.')
 
+  // 6. Master Data Guru & Tendik (Employees)
+  try {
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const jsonPath = path.join(process.cwd(), 'prisma', 'seeds', 'employees.json')
+    const raw = await fs.readFile(jsonPath, 'utf-8')
+    const employees = JSON.parse(raw)
+    
+    let empCount = 0
+    for (const emp of employees) {
+      const existing = await prisma.employee.findFirst({
+        where: {
+          OR: [
+            ...(emp.nip ? [{ nip: emp.nip }] : []),
+            { name: emp.name },
+          ],
+        },
+      })
+      if (!existing) {
+        await prisma.employee.create({
+          data: {
+            name: emp.name,
+            nip: emp.nip || null,
+            nuptk: emp.nuptk || null,
+            pangkatGol: emp.pangkatGol || null,
+            jabatan: emp.jabatan || 'Guru / Tendik',
+            unit: emp.unit || 'SMKN 1 Subang',
+            phoneWa: emp.phoneWa || null,
+            gender: emp.gender || null,
+            isActive: true,
+          },
+        })
+        empCount++
+      }
+    }
+    console.log(`  ✅ Berhasil menyelaraskan master data Guru & Tendik: ${empCount} data baru ditambahkan.`)
+  } catch (empErr) {
+    console.warn('  ⚠️  Skip seed data guru:', empErr)
+  }
+
   console.log('')
   console.log('🎉 Seeding selesai!')
   console.log('')
