@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const vehicles = await prisma.vehicle.findMany({
       where: {
-        status: 'AVAILABLE',
+        status: { not: 'RETIRED' },
         deletedAt: null,
       },
       select: {
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
         brand: true,
         type: true,
         plateNumber: true,
+        seatCapacity: true,
         status: true,
       },
       orderBy: { name: 'asc' },
