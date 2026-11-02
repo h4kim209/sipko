@@ -151,6 +151,7 @@ Bapak/Ibu dapat langsung membalas pesan ini tanpa login web:
 
 👉 Balas *1* untuk *SETUJU*
 👉 Balas *2 [Alasan]* untuk *TOLAK*
+👉 Balas */JADWAL* untuk *CEK JADWAL ARMADA*
 Contoh penolakan: *2 Mobil dipakai dinas ke Disdik*
 ━━━━━━━━━━━━━━━━━━━━
 
