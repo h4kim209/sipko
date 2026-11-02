@@ -333,15 +333,15 @@ async function processApproverCommand(
       `📌 *FORMAT BALASAN:*\n` +
       `1️⃣ *1* atau *1 [KODE_BOOKING]*\n` +
       `   Untuk *MENYETUJUI* pengajuan.\n` +
-      `   Contoh: *1* atau *1 SIP-ABCDE*\n\n` +
+      `   Contoh: *1* atau *1 SIP-ABCD*\n\n` +
       `2️⃣ *2 [Alasan]* atau *2 [KODE_BOOKING] [Alasan]*\n` +
       `   Untuk *MENOLAK* pengajuan (alasan wajib diisi).\n` +
       `   Contoh: *2 Mobil dipakai dinas ke Disdik*\n` +
-      `   atau: *2 SIP-ABCDE Jadwal bentrok*\n\n` +
+      `   atau: *2 SIP-ABCD Jadwal bentrok*\n\n` +
       `3️⃣ *BATAL [Alasan]* atau *BATAL [KODE_BOOKING] [Alasan]*\n` +
       `   Untuk *MEMBATALKAN / MENCABUT* persetujuan jika salah balas 1.\n` +
       `   Contoh: *BATAL Salah pencet setuju*\n` +
-      `   atau: *BATAL SIP-ABCDE Dibatalkan kepala sekolah*\n\n` +
+      `   atau: *BATAL SIP-ABCD Dibatalkan kepala sekolah*\n\n` +
       `4️⃣ *STATUS*\n` +
       `   Melihat daftar pengajuan yang sedang menunggu persetujuan.\n\n` +
       `🌐 Buka web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
