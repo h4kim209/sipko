@@ -1,7 +1,7 @@
 'use client'
 // app/admin/pemohon/page.tsx — Manajemen Data Guru & Pemohon SIPKO
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 
 type Employee = {
   id: string
@@ -20,10 +20,20 @@ export default function PemohonPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  
+  // Modal Tambah / Edit
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  
+  // Modal Import Excel
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -158,6 +168,47 @@ export default function PemohonPage() {
     }
   }
 
+  // Handle Import File Submit
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!importFile) {
+      setError('Pilih berkas Excel terlebih dahulu.')
+      return
+    }
+
+    setImporting(true)
+    setImportResult(null)
+    setError('')
+    setMessage('')
+
+    try {
+      const fd = new FormData()
+      fd.append('file', importFile)
+
+      const res = await fetch('/api/admin/employees/import', {
+        method: 'POST',
+        body: fd,
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Gagal mengimpor data Excel.')
+        return
+      }
+
+      setMessage(data.message || 'Data Excel berhasil diimpor.')
+      setImportResult(data.message)
+      setImportFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      setShowImportModal(false)
+      loadEmployees()
+    } catch {
+      setError('Terjadi kesalahan saat mengunggah dan mengimpor file Excel.')
+    } finally {
+      setImporting(false)
+    }
+  }
+
   // Statistik ringkas
   const totalCount = employees.length
   const activeCount = employees.filter((e) => e.isActive).length
@@ -167,16 +218,50 @@ export default function PemohonPage() {
   return (
     <div>
       {/* Header Halaman */}
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 className="page-title">👨‍🏫 Data Guru & Pemohon</h1>
           <p className="page-subtitle">
             Kelola master data guru & tendik SMKN 1 Subang untuk pencarian dan autofill pada form pengajuan peminjaman.
           </p>
         </div>
-        <div>
-          <button className="btn btn-primary" onClick={openAdd}>
-            + Tambah Guru / Tendik
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* Download Format / Template */}
+          <a
+            href="/api/admin/employees/template?type=blank"
+            className="btn btn-secondary"
+            title="Download Template Format Excel Kosong"
+            style={{ fontSize: '0.8125rem' }}
+          >
+            📄 Format Template Excel
+          </a>
+
+          {/* Download Data Lengkap 180 Guru */}
+          <a
+            href="/api/admin/employees/template?type=full"
+            className="btn btn-secondary"
+            title="Download Data Lengkap Guru & Tendik (180 Pegawai)"
+            style={{ fontSize: '0.8125rem' }}
+          >
+            📊 Download Data Lengkap
+          </a>
+
+          {/* Tombol Import Excel */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              setImportFile(null)
+              setImportResult(null)
+              setShowImportModal(true)
+            }}
+            style={{ fontSize: '0.8125rem', borderColor: 'var(--color-primary-400)', color: 'var(--color-primary-700)' }}
+          >
+            📥 Import Excel
+          </button>
+
+          {/* Tombol Tambah Manual */}
+          <button className="btn btn-primary" onClick={openAdd} style={{ fontSize: '0.8125rem' }}>
+            + Tambah Guru
           </button>
         </div>
       </div>
@@ -359,26 +444,53 @@ export default function PemohonPage() {
         </div>
       </div>
 
-      {/* Modal Tambah / Edit */}
+      {/* MODAL 1: Tambah / Edit Guru (Opaque Solid White & Non-Transparent) */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050,
+            padding: '1rem',
+          }}
+        >
           <div
-            className="modal-container"
-            style={{ maxWidth: '560px', width: '90%' }}
+            className="modal"
+            style={{
+              background: '#ffffff',
+              backgroundColor: '#ffffff',
+              borderRadius: 'var(--radius-xl, 16px)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              maxWidth: '560px',
+              width: '100%',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 1060,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
-              <h3>{editingId ? '✏️ Edit Data Guru & Pemohon' : '➕ Tambah Guru / Tendik Baru'}</h3>
+            <div className="modal-header" style={{ background: '#f8fafc', padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>
+                {editingId ? '✏️ Edit Data Guru & Pemohon' : '➕ Tambah Guru / Tendik Baru'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSave}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="modal-body" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: '#ffffff' }}>
                 <div className="form-group">
                   <label className="form-label">
                     Nama Lengkap Beserta Gelar <span className="required">*</span>
@@ -463,7 +575,7 @@ export default function PemohonPage() {
                   </label>
                 </div>
               </div>
-              <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div className="modal-footer" style={{ background: '#f8fafc', padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -477,6 +589,121 @@ export default function PemohonPage() {
                   disabled={saving}
                 >
                   {saving ? 'Menyimpan...' : '💾 Simpan Data'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Import Data Excel */}
+      {showImportModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowImportModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="modal"
+            style={{
+              background: '#ffffff',
+              backgroundColor: '#ffffff',
+              borderRadius: 'var(--radius-xl, 16px)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              maxWidth: '560px',
+              width: '100%',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 1060,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header" style={{ background: '#f8fafc', padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>
+                📥 Import Data Guru & Tendik dari Excel
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleImportSubmit}>
+              <div className="modal-body" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', background: '#ffffff' }}>
+                <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#0f766e', marginBottom: '0.25rem' }}>
+                    💡 Petunjuk Format Berkas Excel
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: '#134e4a', lineHeight: 1.5 }}>
+                    File Excel (.xlsx) harus memiliki kolom: <strong>Nama Lengkap</strong>, <strong>NIP</strong>, <strong>Pangkat / Golongan</strong>, <strong>Jabatan</strong>, dan <strong>Nomor WhatsApp</strong>.
+                  </div>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <a
+                      href="/api/admin/employees/template?type=blank"
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                    >
+                      ⬇️ Download Format Contoh (.xlsx)
+                    </a>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Pilih File Excel (.xlsx / .xls) <span className="required">*</span>
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx, .xls"
+                    className="form-input"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setImportFile(e.target.files[0])
+                      }
+                    }}
+                    required
+                  />
+                  {importFile && (
+                    <span className="form-hint" style={{ color: '#0d9488', fontWeight: 600 }}>
+                      ✓ Berkas dipilih: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  )}
+                </div>
+
+                {importResult && (
+                  <div className="alert alert-success" style={{ fontSize: '0.8125rem' }}>
+                    <span>✅</span> {importResult}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer" style={{ background: '#f8fafc', padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowImportModal(false)}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className={`btn btn-primary${importing ? ' btn-loading' : ''}`}
+                  disabled={importing || !importFile}
+                >
+                  {importing ? 'Memproses...' : '🚀 Mulai Import Data'}
                 </button>
               </div>
             </form>
