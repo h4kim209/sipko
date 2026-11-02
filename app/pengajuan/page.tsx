@@ -524,10 +524,10 @@ export default function PengajuanPage() {
 
               <hr className="divider" />
 
-              {/* Kendaraan */}
+              {/* Kendaraan & Jadwal Perjalanan */}
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
-                  🚗 Kendaraan
+                  🚗 Kendaraan & Waktu Perjalanan
                 </h3>
                 {loadingVehicles ? (
                   <div className="loading-container" style={{ padding: '1rem' }}>
@@ -540,7 +540,7 @@ export default function PengajuanPage() {
                   </div>
                 ) : (
                   <div className="form-group">
-                    <label className="form-label">Pilih Kendaraan <span className="required">*</span></label>
+                    <label className="form-label">Pilih Kendaraan Operasional <span className="required">*</span></label>
                     <select
                       className={`form-select${errors.vehicleId ? ' error' : ''}`}
                       value={form.vehicleId}
@@ -555,14 +555,19 @@ export default function PengajuanPage() {
                     </select>
                     {errors.vehicleId && <span className="form-error">⚠ {errors.vehicleId}</span>}
 
-                    {/* Kalender visual ketersediaan tanggal */}
-                    {selectedVehicle && (
+                    {/* Kalender visual ketersediaan tanggal & penetapan waktu terpadu */}
+                    {selectedVehicle ? (
                       <VehicleCalendarPicker
                         vehicleId={selectedVehicle.id}
                         vehicleName={selectedVehicle.name}
                         plateNumber={selectedVehicle.plateNumber}
                         departureValue={form.departureDatetime}
                         returnValue={form.returnDatetime}
+                        minDatetime={minDatetime}
+                        departureError={errors.departureDatetime}
+                        returnError={errors.returnDatetime}
+                        onDepartureChange={(val) => setForm((f) => ({ ...f, departureDatetime: val }))}
+                        onReturnChange={(val) => setForm((f) => ({ ...f, returnDatetime: val }))}
                         onSelectDateRange={(dep, ret) => {
                           setForm((f) => ({
                             ...f,
@@ -571,6 +576,10 @@ export default function PengajuanPage() {
                           }))
                         }}
                       />
+                    ) : (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', color: '#64748b' }}>
+                        💡 Silakan pilih kendaraan di atas untuk melihat kalender ketersediaan tanggal dan menentukan jam keberangkatan.
+                      </div>
                     )}
                   </div>
                 )}
@@ -725,39 +734,6 @@ export default function PengajuanPage() {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              <hr className="divider" />
-
-              {/* Jadwal */}
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
-                  📅 Jadwal Perjalanan
-                </h3>
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Tanggal & Jam Berangkat <span className="required">*</span></label>
-                    <input
-                      className={inputClass('departureDatetime')}
-                      type="datetime-local"
-                      min={minDatetime}
-                      value={form.departureDatetime}
-                      onChange={(e) => setForm((f) => ({ ...f, departureDatetime: e.target.value }))}
-                    />
-                    {errors.departureDatetime && <span className="form-error">⚠ {errors.departureDatetime}</span>}
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Tanggal & Jam Kembali <span className="required">*</span></label>
-                    <input
-                      className={inputClass('returnDatetime')}
-                      type="datetime-local"
-                      min={form.departureDatetime || minDatetime}
-                      value={form.returnDatetime}
-                      onChange={(e) => setForm((f) => ({ ...f, returnDatetime: e.target.value }))}
-                    />
-                    {errors.returnDatetime && <span className="form-error">⚠ {errors.returnDatetime}</span>}
-                  </div>
                 </div>
               </div>
 
