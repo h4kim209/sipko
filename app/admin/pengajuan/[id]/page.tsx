@@ -177,6 +177,134 @@ export default async function BookingDetailPage({
         </div>
       </div>
 
+      {/* Manifesting & Dokumen SPPD */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+        {/* Manifesting Armada */}
+        <div className="card">
+          <div className="card-header"><h3>👥 Manifesting Armada</h3></div>
+          <div className="card-body">
+            <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-sm)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: 'var(--space-2)' }}>
+                <div style={{ width: '140px', flexShrink: 0, color: 'var(--color-gray-500)', fontWeight: 500 }}>Pengemudi / Supir</div>
+                <div style={{ flex: 1, fontWeight: 600 }}>
+                  🚗 {booking.driverName || booking.applicantName}{' '}
+                  {booking.driverPhone && (
+                    <span style={{ color: 'var(--color-gray-500)', fontWeight: 400 }}>({booking.driverPhone})</span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-sm)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: 'var(--space-2)' }}>
+                <div style={{ width: '140px', flexShrink: 0, color: 'var(--color-gray-500)', fontWeight: 500 }}>Penumpang Guru/Staf</div>
+                <div style={{ flex: 1 }}>
+                  {Array.isArray(booking.passengers) && (booking.passengers as string[]).length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                      {(booking.passengers as string[]).map((p: string, idx: number) => (
+                        <span key={idx} className="badge status-approved" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+                          👤 {p}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: 'var(--color-gray-500)' }}>Hanya pengemudi</span>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-sm)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: 'var(--space-2)' }}>
+                <div style={{ width: '140px', flexShrink: 0, color: 'var(--color-gray-500)', fontWeight: 500 }}>Catatan Siswa / Tamu</div>
+                <div style={{ flex: 1, fontWeight: 500, color: booking.passengerNotes ? 'var(--color-gray-800)' : 'var(--color-gray-400)' }}>
+                  {booking.passengerNotes || 'Tidak ada peserta siswa/luar'}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-sm)' }}>
+                <div style={{ width: '140px', flexShrink: 0, color: 'var(--color-gray-500)', fontWeight: 500 }}>Estimasi Total Penumpang</div>
+                <div style={{ flex: 1, fontWeight: 700, color: 'var(--color-primary-700)' }}>
+                  {booking.passengerCount || 1} Orang
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dokumen SPPD */}
+        <div className="card">
+          <div className="card-header"><h3>📄 Dokumen SPPD / Surat Tugas</h3></div>
+          <div className="card-body">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-600)' }}>Status Dokumen:</span>
+                <span className={`badge ${booking.hasSppd ? 'status-approved' : 'status-pending'}`} style={{ fontSize: '0.75rem' }}>
+                  {booking.hasSppd ? '✅ Ada Dokumen SPPD' : '⚪ Tidak Ada SPPD'}
+                </span>
+              </div>
+
+              {booking.hasSppd && booking.sppdPhotoPath ? (
+                <div style={{
+                  marginTop: '0.5rem',
+                  padding: '1rem',
+                  background: '#f8fafc',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  gap: '1rem',
+                  alignItems: 'center',
+                }}>
+                  <a
+                    href={`/api/sppd/${booking.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Klik untuk melihat ukuran penuh"
+                    style={{ position: 'relative', display: 'block', flexShrink: 0 }}
+                  >
+                    <img
+                      src={`/api/sppd/${booking.id}`}
+                      alt="Foto SPPD"
+                      style={{
+                        width: '90px',
+                        height: '110px',
+                        objectFit: 'cover',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid #cbd5e1',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+                      }}
+                    />
+                  </a>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                    <div style={{ fontWeight: 700, fontSize: 'var(--font-size-sm)', color: '#1e293b' }}>
+                      Lampiran Foto SPPD
+                    </div>
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: '#64748b' }}>
+                      Surat Perintah Perjalanan Dinas resmi yang diunggah oleh pemohon.
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <a
+                        href={`/api/sppd/${booking.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        🔍 Lihat Foto Penuh
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : booking.hasSppd ? (
+                <div className="alert alert-warning" style={{ fontSize: 'var(--font-size-xs)' }}>
+                  <span>⚠️</span> Dinyatakan ada SPPD, namun file foto tidak terunggah.
+                </div>
+              ) : (
+                <div style={{ color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)', fontStyle: 'italic', padding: '1rem 0' }}>
+                  Perjalanan dinas ini tidak disertai dokumen SPPD.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Jadwal */}
       <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
         <div className="card-header"><h3>📅 Jadwal Perjalanan</h3></div>
