@@ -201,18 +201,31 @@ async function processApproverCommand(
   const explicitBookingCode = bookingCodeMatch ? bookingCodeMatch[1].toUpperCase() : null
 
   // 2. Klasifikasi intensi perintah
-  let intention: 'APPROVE' | 'REJECT' | 'STATUS' | 'HELP' | 'CANCEL' | 'UNKNOWN' = 'UNKNOWN'
+  let intention: 'APPROVE' | 'REJECT' | 'STATUS' | 'HELP' | 'CANCEL' | 'JADWAL' | 'UNKNOWN' = 'UNKNOWN'
   let rejectionReason: string | null = null
   let cancelReason: string | null = null
 
   if (
-    ['status', 'cek', 'info', 'list', 'antrian', 'daftar', 'pengajuan'].includes(lower) ||
+    lower === '/jadwal' ||
+    lower === 'jadwal' ||
+    lower.startsWith('/jadwal') ||
+    lower.startsWith('jadwal ') ||
+    lower === '/kalender' ||
+    lower === 'kalender' ||
+    lower.startsWith('/kalender') ||
+    lower.startsWith('kalender ') ||
+    lower.includes('jadwal')
+  ) {
+    intention = 'JADWAL'
+  } else if (
+    ['status', 'cek', 'info', 'list', 'antrian', 'daftar', 'pengajuan', '/status', '/cek'].includes(lower) ||
     lower.startsWith('status ') ||
     lower.startsWith('cek ') ||
-    lower.startsWith('info ')
+    lower.startsWith('info ') ||
+    lower.startsWith('/status')
   ) {
     intention = 'STATUS'
-  } else if (['bantuan', 'help', 'menu', 'panduan'].includes(lower) || lower === '/help' || lower === '/menu') {
+  } else if (['bantuan', 'help', 'menu', 'panduan', '/help', '/menu', '/bantuan'].includes(lower)) {
     intention = 'HELP'
   } else if (
     lower === 'batal' ||
