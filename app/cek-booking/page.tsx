@@ -58,6 +58,9 @@ const STATUS_CLASSES: Record<string, string> = {
 
 export default function CekBookingPage() {
   const [bookingCode, setBookingCode] = useState('')
+  const [codeDigits, setCodeDigits] = useState(['', '', '', ''])
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const phoneInputRef = useRef<HTMLInputElement>(null)
   const [phoneWa, setPhoneWa] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
