@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
     autoTable(doc, {
       startY: 32,
       margin: { left: 14, right: 14, bottom: 15 },
-      head: [['No', 'Kode', 'Pemohon / Kontak', 'Kendaraan', 'Manifesting Armada', 'Tujuan / Acara', 'SPPD', 'Jadwal', 'Status']],
+      head: [['No', 'Kode', 'Pemohon / Kontak', 'Kendaraan', 'Pengemudi & Penumpang', 'Tujuan / Acara', 'SPPD', 'Jadwal', 'Status']],
       body: tableBody,
       theme: 'grid',
       headStyles: {
