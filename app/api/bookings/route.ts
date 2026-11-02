@@ -195,8 +195,20 @@ export async function POST(request: NextRequest) {
     // Kirim notifikasi WA ke pemohon (async, jangan gagalkan booking)
     try {
       const wa = getWhatsAppAdapter()
+      const passengerSummary = [
+        ...(data.passengers && data.passengers.length ? [data.passengers.join(', ')] : []),
+        ...(data.passengerNotes ? [`Catatan: ${data.passengerNotes}`] : []),
+      ].join(' | ') || (data.passengerCount ? `${data.passengerCount} orang` : undefined)
+
+      const driverSummary = data.driverName ? `${data.driverName}${data.driverPhone ? ` (${data.driverPhone})` : ''}` : undefined
+
       const msg = WA_TEMPLATES.bookingCreatedApplicant({
         nama: data.applicantName,
+        nip: data.applicantNip || '-',
+        jabatan: data.applicantJabatan,
+        kendaraan: vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : undefined,
+        supir: driverSummary,
+        penumpang: passengerSummary || undefined,
         waktu_pinjam: formatWaDate(data.departureDatetime),
         waktu_kembali: formatWaDate(data.returnDatetime),
         tujuan: data.destinationName,
@@ -231,10 +243,6 @@ export async function POST(request: NextRequest) {
 
       // Kirim juga ke Kepala Sekolah (APPROVER) dan Pengelola SIPKO
       const approvers = await getApproverPhoneNumbers()
-      const passengerSummary = [
-        ...(data.passengers && data.passengers.length ? [data.passengers.join(', ')] : []),
-        ...(data.passengerNotes ? [`Catatan: ${data.passengerNotes}`] : []),
-      ].join(' | ') || (data.passengerCount ? `${data.passengerCount} orang` : undefined)
 
       for (const approver of approvers) {
         const adminMsg = WA_TEMPLATES.bookingCreatedAdmin({
@@ -243,7 +251,7 @@ export async function POST(request: NextRequest) {
           nip: data.applicantNip || '-',
           jabatan: data.applicantJabatan,
           kendaraan: vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : undefined,
-          supir: data.driverName ? `${data.driverName}${data.driverPhone ? ` (${data.driverPhone})` : ''}` : undefined,
+          supir: driverSummary,
           penumpang: passengerSummary || undefined,
           sppd: data.hasSppd ? '✅ Ada Lampiran Dokumen SPPD' : 'Tidak Ada',
           waktu_pinjam: formatWaDate(data.departureDatetime),
