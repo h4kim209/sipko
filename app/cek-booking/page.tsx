@@ -1,7 +1,7 @@
 'use client'
 // app/cek-booking/page.tsx — Halaman Cek Kode Booking (Publik)
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 type BookingInfo = {
