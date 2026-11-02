@@ -90,7 +90,7 @@ export type CreateBookingInput = z.infer<typeof CreateBookingSchema>
 export const CheckBookingSchema = z.object({
   bookingCode: z
     .string()
-    .regex(/^SIP-[A-Z2-9]{8}$/, 'Format kode booking tidak valid.'),
+    .regex(/^SIP-[A-Z2-9]{4,8}$/i, 'Format kode booking tidak valid.'),
   phoneWa: whatsappSchema,
 })
 

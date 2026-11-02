@@ -354,7 +354,7 @@ export default function CekBookingPage() {
                 <input
                   className="form-input"
                   type="text"
-                  placeholder="Contoh: SIP-ABCD1234"
+                  placeholder="Contoh: SIP-ABCDE"
                   value={bookingCode}
                   onChange={(e) => setBookingCode(e.target.value.toUpperCase())}
                   onKeyDown={(e) => {
