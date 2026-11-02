@@ -382,6 +382,21 @@ export default function PengajuanPage() {
                   { label: 'Estimasi Jarak (1 arah)', value: form.routeDistanceKm ? `${form.routeDistanceKm} km` : 'Tidak tersedia' },
                   { label: 'Waktu Berangkat', value: new Date(form.departureDatetime).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
                   { label: 'Waktu Kembali', value: new Date(form.returnDatetime).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
+                  {
+                    label: 'Pengemudi / Supir',
+                    value: form.driverType === 'PEMOHON'
+                      ? `${form.applicantName} (Pemohon Sendiri)`
+                      : `${form.driverName || '-'} ${form.driverPhone ? `(${form.driverPhone})` : ''}`,
+                  },
+                  {
+                    label: 'Penumpang Guru / Staf',
+                    value: form.passengers.length > 0 ? form.passengers.join(', ') : 'Hanya pengemudi',
+                  },
+                  ...(form.passengerNotes ? [{ label: 'Catatan Siswa / Peserta Lain', value: form.passengerNotes }] : []),
+                  {
+                    label: 'Dokumen SPPD',
+                    value: form.hasSppd ? '✅ Ada Lampiran Foto SPPD' : 'Tidak Ada',
+                  },
                   { label: 'Catatan', value: form.additionalNotes || '-' },
                 ].map((row) => (
                   <div key={row.label} style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: '0.75rem' }}>
@@ -390,6 +405,13 @@ export default function PengajuanPage() {
                   </div>
                 ))}
               </div>
+
+              {form.hasSppd && form.sppdPhotoBase64 && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8fafc', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '0.5rem' }}>📄 Lampiran Foto Dokumen SPPD:</div>
+                  <img src={form.sppdPhotoBase64} alt="Foto SPPD" style={{ maxWidth: '140px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                </div>
+              )}
 
               {submitError && (
                 <div className="alert alert-danger" style={{ marginTop: '1.5rem' }}>
@@ -527,11 +549,29 @@ export default function PengajuanPage() {
                       <option value="">-- Pilih Kendaraan --</option>
                       {vehicles.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.name} — {v.brand} {v.type} ({v.plateNumber})
+                          {v.name} — {v.brand} {v.type} ({v.plateNumber}) {v.status === 'IN_USE' ? '• Sedang Digunakan' : '• Tersedia'}
                         </option>
                       ))}
                     </select>
                     {errors.vehicleId && <span className="form-error">⚠ {errors.vehicleId}</span>}
+
+                    {/* Kalender visual ketersediaan tanggal */}
+                    {selectedVehicle && (
+                      <VehicleCalendarPicker
+                        vehicleId={selectedVehicle.id}
+                        vehicleName={selectedVehicle.name}
+                        plateNumber={selectedVehicle.plateNumber}
+                        departureValue={form.departureDatetime}
+                        returnValue={form.returnDatetime}
+                        onSelectDateRange={(dep, ret) => {
+                          setForm((f) => ({
+                            ...f,
+                            departureDatetime: dep.slice(0, 16),
+                            returnDatetime: ret.slice(0, 16),
+                          }))
+                        }}
+                      />
+                    )}
                   </div>
                 )}
               </div>
