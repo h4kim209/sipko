@@ -373,11 +373,8 @@ export default function PengajuanPage() {
             <div className="card-body">
               <div style={{ display: 'grid', gap: '1rem' }}>
                 {[
-                  { label: 'Nama', value: form.applicantName },
-                  { label: 'NIP', value: form.applicantNip || '-' },
-                  { label: 'Jabatan', value: form.applicantJabatan },
-                  { label: 'Unit/Bagian', value: form.applicantUnit || '-' },
-                  { label: 'No. WhatsApp', value: form.applicantPhoneWa },
+                  { label: 'Nama Pemohon', value: form.applicantName },
+                  { label: 'Status Data Pemohon', value: '✅ Terverifikasi di Database (Rincian NIP & Jabatan dikirim via WhatsApp)' },
                   { label: 'Kendaraan', value: selectedVehicle ? `${selectedVehicle.name} (${selectedVehicle.plateNumber})` : '-' },
                   { label: 'Keperluan', value: `${form.purposeCategory}${form.purposeNotes ? ': ' + form.purposeNotes : ''}` },
                   { label: 'Asal Keberangkatan', value: SCHOOL_ADDRESS },
@@ -390,7 +387,7 @@ export default function PengajuanPage() {
                     label: 'Pengemudi / Supir',
                     value: form.driverType === 'PEMOHON'
                       ? `${form.applicantName} (Pemohon Sendiri)`
-                      : `${form.driverName || '-'} ${form.driverPhone ? `(${form.driverPhone})` : ''}`,
+                      : `${form.driverName || '-'}`,
                   },
                   {
                     label: 'Penumpang Guru / Staf',
@@ -471,67 +468,43 @@ export default function PengajuanPage() {
                     {errors.applicantName && <span className="form-error">⚠ {errors.applicantName}</span>}
                   </div>
 
-                  {/* Tampilkan detail biodata otomatis saat nama dipilih (tanpa text box berulang) */}
+                  {/* Status checklist saat nama dipilih (data sensitif NIP & no HP dirahasiakan di layar publik) */}
                   {form.applicantName ? (
-                    <div
-                      style={{
-                        background: '#f8fafc',
-                        border: '1.5px solid #ccfbf1',
-                        borderRadius: 'var(--radius-lg, 12px)',
-                        padding: '1rem',
-                        boxShadow: '0 2px 6px rgba(13, 148, 136, 0.05)',
-                      }}
-                    >
+                    <div style={{ display: 'grid', gap: '0.625rem' }}>
                       <div
                         style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                          gap: '0.875rem',
-                          fontSize: '0.8125rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.625rem',
+                          background: '#f0fdf4',
+                          border: '1.5px solid #86efac',
+                          borderRadius: 'var(--radius-md, 8px)',
+                          padding: '0.75rem 1rem',
+                          color: '#166534',
                         }}
                       >
-                        <div>
-                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                            NIP:
-                          </div>
-                          <div style={{ color: '#0f172a', fontWeight: 700, fontFamily: form.applicantNip ? 'monospace' : 'inherit', marginTop: '2px' }}>
-                            {form.applicantNip || '-'}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Jabatan:
-                          </div>
-                          <div style={{ color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
-                            {form.applicantJabatan || 'Guru / Tendik'}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Unit / Bagian:
-                          </div>
-                          <div style={{ color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
-                            {form.applicantUnit || 'SMK Negeri 1 Subang'}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Nomor WhatsApp:
-                          </div>
-                          <div style={{ color: '#0d9488', fontWeight: 800, marginTop: '2px' }}>
-                            {form.applicantPhoneWa ? `💬 ${form.applicantPhoneWa}` : <span style={{ color: '#dc2626' }}>Belum terdaftar</span>}
+                        <span style={{ fontSize: '1.25rem' }}>✅</span>
+                        <div style={{ flex: 1, fontSize: '0.8125rem', lineHeight: 1.4 }}>
+                          <div style={{ fontWeight: 700 }}>Data Guru / Tendik Terverifikasi di Sistem</div>
+                          <div style={{ color: '#15803d', fontSize: '0.75rem', marginTop: '2px' }}>
+                            Rincian data identitas & notifikasi konfirmasi pengajuan akan dikirimkan otomatis melalui pesan WhatsApp resmi.
                           </div>
                         </div>
                       </div>
 
+                      {/* Keterangan pelaporan ke pengembang jika ada kendala data */}
+                      <div style={{ fontSize: '0.725rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        <span>ℹ️</span>
+                        <span>
+                          Jika ada kendala data, mohon melapor ke bagian <strong>Pengembang Aplikasi SMKN 1 Subang</strong>.
+                        </span>
+                      </div>
+
                       {/* Input cadangan jika nomor WA belum terdaftar di database */}
                       {!form.applicantPhoneWa && (
-                        <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px' }}>
+                        <div style={{ padding: '0.625rem 0.875rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px' }}>
                           <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626', display: 'block', marginBottom: '0.25rem' }}>
-                            ⚠ Nomor WhatsApp belum terdaftar di database. Masukkan nomor WhatsApp aktif Anda:
+                            ⚠ Nomor WhatsApp belum terdaftar di database. Masukkan nomor WhatsApp aktif Anda untuk menerima notifikasi:
                           </label>
                           <input
                             type="tel"
@@ -543,30 +516,10 @@ export default function PengajuanPage() {
                           />
                         </div>
                       )}
-
-                      {/* Keterangan pelaporan ke pengembang aplikasi */}
-                      <div
-                        style={{
-                          marginTop: '0.875rem',
-                          paddingTop: '0.625rem',
-                          borderTop: '1px dashed #cbd5e1',
-                          fontSize: '0.725rem',
-                          color: '#64748b',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.375rem',
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        <span style={{ fontSize: '0.875rem' }}>ℹ️</span>
-                        <span>
-                          Jika ada kesalahan data NIP, jabatan, atau nomor WhatsApp, mohon melapor ke bagian <strong>Pengembang Aplikasi SMKN 1 Subang</strong>.
-                        </span>
-                      </div>
                     </div>
                   ) : (
                     <div style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic', marginTop: '-0.25rem' }}>
-                      Pilih nama Anda dari daftar di atas, NIP, jabatan, dan nomor WhatsApp akan terisi otomatis dari database.
+                      Pilih nama Anda dari daftar di atas, data Anda otomatis terverifikasi dengan sistem sekolah.
                     </div>
                   )}
                 </div>
@@ -790,10 +743,10 @@ export default function PengajuanPage() {
 
               <hr className="divider" />
 
-              {/* Manifesting & Penumpang */}
+              {/* Pengemudi & Penumpang */}
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
-                  👥 Manifesting Armada (Pengemudi & Penumpang)
+                  👥 Pengemudi & Penumpang
                 </h3>
                 <div style={{ display: 'grid', gap: '1rem' }}>
                   {/* Pilihan Supir */}
