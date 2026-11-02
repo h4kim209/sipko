@@ -44,11 +44,18 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPhone = normalizePhone(phoneWa)
+    let cleanCode = bookingCode.trim().toUpperCase()
+    if (!cleanCode.startsWith('SIP-')) {
+      cleanCode = `SIP-${cleanCode}`
+    }
 
-    // Cari booking — jangan beri tahu apakah kode ada atau nomor salah (anti-enumeration)
+    // Cari booking — mendukung kode 4 digit saja (misal: JM2Q) maupun format penuh (SIP-JM2Q)
     const booking = await prisma.booking.findFirst({
       where: {
-        bookingCode: bookingCode.toUpperCase(),
+        OR: [
+          { bookingCode: cleanCode },
+          { bookingCode: bookingCode.trim().toUpperCase() },
+        ],
         applicantPhoneWa: normalizedPhone,
         deletedAt: null,
       },
