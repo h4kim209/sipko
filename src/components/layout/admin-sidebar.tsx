@@ -14,6 +14,7 @@ const MENU_ITEMS = [
   { label: 'Sedang Digunakan', href: '/admin/sedang-digunakan', icon: '🚗' },
   { label: 'Pemeriksaan Pengembalian', href: '/admin/pemeriksaan-kembali', icon: '📋' },
   { section: 'MANAJEMEN' },
+  { label: 'Data Guru & Pemohon', href: '/admin/pemohon', icon: '👨‍🏫' },
   { label: 'Data Kendaraan', href: '/admin/kendaraan', icon: '🚙' },
   { label: 'Grafik KM Kendaraan', href: '/admin/odometer', icon: '📈' },
   { label: 'Riwayat Peminjaman', href: '/admin/riwayat', icon: '📁' },
