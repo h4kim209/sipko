@@ -326,7 +326,112 @@ async function processApproverCommand(
       `⚡ *CARA MEMPROSES CEPAT:*\n` +
       `👉 Balas *1 ${pendingBookings[0].bookingCode}* untuk Setuju\n` +
       `👉 Balas *2 ${pendingBookings[0].bookingCode} [Alasan]* untuk Tolak\n` +
+      `👉 Balas */JADWAL* untuk Cek Jadwal Peminjaman\n` +
       `━━━━━━━━━━━━━━━━━━━━`
+    )
+    return
+  }
+
+  // JIKA PERINTAH JADWAL / KALENDER
+  if (intention === 'JADWAL') {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+
+    const futureLimit = new Date(now)
+    futureLimit.setDate(futureLimit.getDate() + 30)
+    futureLimit.setHours(23, 59, 59, 999)
+
+    const scheduledBookings = await prisma.booking.findMany({
+      where: {
+        deletedAt: null,
+        status: {
+          in: [
+            'DISETUJUI',
+            'MENUNGGU_PEMERIKSAAN_AWAL',
+            'SIAP_BERANGKAT',
+            'SEDANG_DIGUNAKAN',
+            'MENUNGGU_PEMERIKSAAN_PENGEMBALIAN',
+            'PERLU_PERBAIKAN_BUKTI',
+          ],
+        },
+        returnDatetime: { gte: todayStart },
+        departureDatetime: { lte: futureLimit },
+      },
+      include: {
+        vehicle: true,
+      },
+      orderBy: {
+        departureDatetime: 'asc',
+      },
+      take: 12,
+    })
+
+    if (scheduledBookings.length === 0) {
+      await reply(
+        `📅 *JADWAL KENDARAAN OPERASIONAL (SIPKO)*\n` +
+        `SMK Negeri 1 Subang\n\n` +
+        `Yth. Bapak/Ibu *${approver.name || 'Pejabat Penyetuju'}*,\n` +
+        `Saat ini *TIDAK ADA* jadwal peminjaman kendaraan yang aktif atau mendatang.\n\n` +
+        `✅ Seluruh armada operasional berstatus *TERSEDIA*.\n\n` +
+        `🌐 Buka Kalender Web:\n` +
+        `${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/kalender`
+      )
+      return
+    }
+
+    const formatTgl = (d: Date) => {
+      return d.toLocaleDateString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    }
+
+    const formatJam = (d: Date) => {
+      return d.toLocaleTimeString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    }
+
+    const scheduleItems = scheduledBookings
+      .map((b, idx) => {
+        const dep = new Date(b.departureDatetime)
+        const ret = new Date(b.returnDatetime)
+        const tglStr = formatTgl(dep)
+        const jamStr = `${formatJam(dep)} - ${formatJam(ret)} WIB`
+        const supirStr = b.driverName ? `\n   👨‍✈️ Supir: ${b.driverName}` : ''
+        const statusLabel =
+          b.status === 'SEDANG_DIGUNAKAN'
+            ? 'SEDANG DIGUNAKAN'
+            : b.status === 'DISETUJUI'
+            ? 'DISETUJUI'
+            : b.status.replace(/_/g, ' ')
+
+        return (
+          `${idx + 1}. 📅 *${tglStr}*\n` +
+          `   ⏱️ ${jamStr}\n` +
+          `   🚗 *${b.vehicle ? b.vehicle.name : 'Armada'}* (${b.vehicle ? b.vehicle.plateNumber : '-'})\n` +
+          `   👤 Pemohon: ${b.applicantName}${supirStr}\n` +
+          `   📍 Tujuan: ${b.destinationName}\n` +
+          `   🔖 Kode: *${b.bookingCode}* [${statusLabel}]`
+        )
+      })
+      .join('\n\n')
+
+    await reply(
+      `📅 *JADWAL PENGGUNAAN ARMADA (SIPKO)*\n` +
+      `SMK Negeri 1 Subang\n\n` +
+      `Yth. Bapak/Ibu *${approver.name || 'Pejabat Penyetuju'}*,\n` +
+      `Berikut ${scheduledBookings.length} jadwal peminjaman armada terdekat:\n\n` +
+      `${scheduleItems}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 Buka Kalender Bulanan Web:\n` +
+      `${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/kalender`
     )
     return
   }
@@ -342,8 +447,8 @@ async function processApproverCommand(
       `*SIPKO — Layanan Persetujuan WhatsApp* 🚗\n` +
       `SMK Negeri 1 Subang\n\n` +
       `Yth. Bapak/Ibu *${approver.name || 'Pejabat Penyetuju'}*,\n` +
-      `Anda dapat memproses persetujuan peminjaman kendaraan langsung via pesan WhatsApp ini:\n\n` +
-      `📌 *FORMAT BALASAN:*\n` +
+      `Anda dapat mengelola peminjaman kendaraan langsung via pesan WhatsApp ini:\n\n` +
+      `📌 *FORMAT PERINTAH:*\n` +
       `1️⃣ *1* atau *1 [KODE_BOOKING]*\n` +
       `   Untuk *MENYETUJUI* pengajuan.\n` +
       `   Contoh: *1* atau *1 SIP-ABCD*\n\n` +
@@ -351,13 +456,15 @@ async function processApproverCommand(
       `   Untuk *MENOLAK* pengajuan (alasan wajib diisi).\n` +
       `   Contoh: *2 Mobil dipakai dinas ke Disdik*\n` +
       `   atau: *2 SIP-ABCD Jadwal bentrok*\n\n` +
-      `3️⃣ *BATAL [Alasan]* atau *BATAL [KODE_BOOKING] [Alasan]*\n` +
+      `3️⃣ */JADWAL* atau *JADWAL*\n` +
+      `   Melihat rekap jadwal peminjaman armada aktif & mendatang.\n\n` +
+      `4️⃣ *STATUS*\n` +
+      `   Melihat daftar pengajuan yang sedang menunggu persetujuan.\n\n` +
+      `5️⃣ *BATAL [Alasan]* atau *BATAL [KODE_BOOKING] [Alasan]*\n` +
       `   Untuk *MEMBATALKAN / MENCABUT* persetujuan jika salah balas 1.\n` +
       `   Contoh: *BATAL Salah pencet setuju*\n` +
       `   atau: *BATAL SIP-ABCD Dibatalkan kepala sekolah*\n\n` +
-      `4️⃣ *STATUS*\n` +
-      `   Melihat daftar pengajuan yang sedang menunggu persetujuan.\n\n` +
-      `🌐 Buka web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
+      `🌐 Dashboard Web: ${process.env.APP_URL || 'https://sipko.smkn1subang.sch.id'}/admin/pengajuan`
     )
     return
   }
