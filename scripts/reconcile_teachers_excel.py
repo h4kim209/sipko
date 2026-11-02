@@ -279,7 +279,7 @@ def main():
 
     out_path = os.path.join("data guru", "DAFTAR_GURU_TENDIK_LENGKAP.xlsx")
     out_wb.save(out_path)
-    print(f"✅ File Excel lengkap berhasil disimpan di: {out_path}")
+    print(f"[OK] File Excel lengkap berhasil disimpan di: {out_path}")
 
     # Simpan juga ke prisma/seeds/employees.json & employees.sql
     json_path = os.path.join("prisma", "seeds", "employees.json")
@@ -321,11 +321,11 @@ def main():
 
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_employees, f, ensure_ascii=False, indent=2)
-    print(f"✅ Data JSON seed diperbarui: {json_path} ({len(json_employees)} data)")
+    print(f"[OK] Data JSON seed diperbarui: {json_path} ({len(json_employees)} data)")
 
     with open(sql_path, "w", encoding="utf-8") as f:
         f.write("\n".join(sql_statements))
-    print(f"✅ Data SQL seed diperbarui: {sql_path} ({len(sql_statements)} statements)")
+    print(f"[OK] Data SQL seed diperbarui: {sql_path} ({len(sql_statements)} statements)")
 
 if __name__ == "__main__":
     main()
