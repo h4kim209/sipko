@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan Peminjaman')
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename=laporan-sipko-${new Date().toISOString().slice(0, 10)}.xlsx`,
@@ -374,7 +374,7 @@ export async function GET(request: NextRequest) {
 
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename=laporan-sipko-${new Date().toISOString().slice(0, 10)}.pdf`,

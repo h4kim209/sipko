@@ -55,9 +55,10 @@ export async function GET(
       ? 'image/webp'
       : 'image/jpeg'
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         'Content-Type': contentType,
+        'Content-Length': fileBuffer.length.toString(),
         'Cache-Control': 'private, max-age=86400',
         'Content-Disposition': `inline; filename="sppd-${booking.bookingCode}.jpg"`,
       },
