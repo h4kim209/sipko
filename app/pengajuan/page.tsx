@@ -303,12 +303,15 @@ export default function PengajuanPage() {
                 }}>
                   {successData.bookingCode}
                 </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-primary-700)', marginTop: '0.375rem' }}>
+                  (Cukup masukkan 4 digit kode <strong>{successData.bookingCode.replace(/^SIP-/, '')}</strong> saat mengecek status)
+                </div>
               </div>
 
               <div className="alert alert-warning" style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
                 <span>⚠️</span>
                 <div>
-                  <strong>Simpan kode ini!</strong> Anda membutuhkan kode booking dan nomor WhatsApp untuk mengecek status pengajuan.
+                  <strong>Simpan kode ini!</strong> Anda membutuhkan 4 digit kode unik ini dan nomor WhatsApp untuk mengecek status pengajuan.
                 </div>
               </div>
 
@@ -322,7 +325,7 @@ export default function PengajuanPage() {
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <Link href={`/cek-booking`} className="btn btn-primary">
+                <Link href={`/cek-booking?code=${successData.bookingCode}`} className="btn btn-primary">
                   🔍 Cek Status Booking
                 </Link>
                 <Link href="/" className="btn btn-secondary">

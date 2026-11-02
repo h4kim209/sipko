@@ -111,11 +111,11 @@ Pengajuan peminjaman kendaraan operasional berhasil dikirim dengan rincian data 
 📅 Kembali: ${data.waktu_kembali}
 📍 Tujuan: ${data.tujuan}
 🛣️ Estimasi Jarak: ${data.jarak_km} km
-🔖 Kode Booking: *${data.kode_booking}*
+🔖 Kode Booking: *${data.kode_booking}* (4 Digit: *${data.kode_booking.replace(/^SIP-/, '')}*)
 
 Status saat ini: *Menunggu Persetujuan*.
-Silakan pantau perkembangan status peminjaman melalui:
-${data.app_url}
+Cek status peminjaman dengan 4 digit di atas melalui:
+${data.app_url}/cek-booking?code=${data.kode_booking}
 
 SIPKO | SMKN 1 Subang`,
 
