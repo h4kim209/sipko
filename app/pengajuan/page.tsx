@@ -1002,7 +1002,16 @@ export default function PengajuanPage() {
                 />
               </div>
 
-              {Object.keys(errors).length > 0 && (
+              {clashError && (
+                <div className="alert alert-danger" style={{ marginBottom: '1rem' }}>
+                  <span>⛔</span>
+                  <div>
+                    <strong>Peminjaman Ganda Ditolak:</strong> {clashError}
+                  </div>
+                </div>
+              )}
+
+              {Object.keys(errors).length > 0 && !clashError && (
                 <div className="alert alert-danger">
                   <span>⚠️</span>
                   <div>Terdapat beberapa isian yang belum lengkap. Periksa kembali formulir di atas.</div>
@@ -1012,7 +1021,12 @@ export default function PengajuanPage() {
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   className="btn btn-primary btn-lg"
-                  onClick={() => { if (validate()) setStep(2) }}
+                  disabled={Boolean(clashError)}
+                  onClick={() => {
+                    if (clashError) return
+                    if (validate()) setStep(2)
+                  }}
+                  title={clashError ? 'Pilih tanggal/jadwal yang tersedia terlebih dahulu' : 'Lanjut ke tinjauan pengajuan'}
                 >
                   Tinjau Pengajuan →
                 </button>
