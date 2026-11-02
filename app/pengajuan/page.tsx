@@ -1,9 +1,11 @@
 'use client'
 // app/pengajuan/page.tsx — Form Pengajuan Peminjaman Kendaraan
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { EmployeeCombobox, EmployeeOption } from '@/components/booking/employee-combobox'
+import { VehicleCalendarPicker } from '@/components/booking/vehicle-calendar-picker'
 
 const CATEGORIES = [
   'Dinas Luar Kota',
@@ -48,6 +50,15 @@ type FormData = {
   departureDatetime: string
   returnDatetime: string
   additionalNotes: string
+  // Manifesting & SPPD
+  driverType: 'PEMOHON' | 'GURU_LAIN' | 'SUPIR_LUAR'
+  driverName: string
+  driverPhone: string
+  passengerCount: number
+  passengers: string[]
+  passengerNotes: string
+  hasSppd: boolean
+  sppdPhotoBase64: string
 }
 
 type FormErrors = Partial<Record<keyof FormData, string>>
@@ -82,6 +93,15 @@ export default function PengajuanPage() {
     departureDatetime: '',
     returnDatetime: '',
     additionalNotes: '',
+    // Manifesting & SPPD
+    driverType: 'PEMOHON',
+    driverName: '',
+    driverPhone: '',
+    passengerCount: 1,
+    passengers: [],
+    passengerNotes: '',
+    hasSppd: false,
+    sppdPhotoBase64: '',
   })
 
   // Load kendaraan tersedia
@@ -180,12 +200,24 @@ export default function PengajuanPage() {
     if (!validate()) return
     setSubmitting(true)
     setSubmitError('')
+
+    const finalDriverName =
+      form.driverType === 'PEMOHON'
+        ? form.applicantName
+        : form.driverName.trim() || form.applicantName
+    const finalDriverPhone =
+      form.driverType === 'PEMOHON'
+        ? form.applicantPhoneWa
+        : form.driverPhone.trim() || form.applicantPhoneWa
+
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          driverName: finalDriverName,
+          driverPhone: finalDriverPhone,
           departureDatetime: new Date(form.departureDatetime).toISOString(),
           returnDatetime: new Date(form.returnDatetime).toISOString(),
         }),
