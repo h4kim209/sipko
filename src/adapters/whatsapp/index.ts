@@ -123,13 +123,16 @@ SIPKO | SMKN 1 Subang`,
     tujuan: string
     kode_booking: string
     app_url: string
+    supir?: string
+    penumpang?: string
+    sppd?: string
   }) => `SIPKO — Pengajuan Peminjaman Baru 📋
 
 ${data.nama_petugas ? `Yth. Bapak/Ibu ${data.nama_petugas},\n` : ''}Terdapat permohonan peminjaman kendaraan baru yang memerlukan persetujuan:
 
 👤 Pemohon: *${data.nama_pemohon}*
 🪪 NIP: ${data.nip || '-'}
-💼 Jabatan: ${data.jabatan}${data.kendaraan ? `\n🚙 Kendaraan: ${data.kendaraan}` : ''}
+💼 Jabatan: ${data.jabatan}${data.kendaraan ? `\n🚙 Kendaraan: ${data.kendaraan}` : ''}${data.supir ? `\n🚗 Pengemudi/Supir: ${data.supir}` : ''}${data.penumpang ? `\n👥 Penumpang: ${data.penumpang}` : ''}${data.sppd ? `\n📄 Status SPPD: ${data.sppd}` : ''}
 📅 Berangkat: ${data.waktu_pinjam}
 📅 Kembali: ${data.waktu_kembali}
 📍 Tujuan: ${data.tujuan}

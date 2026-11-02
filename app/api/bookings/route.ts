@@ -97,6 +97,23 @@ export async function POST(request: NextRequest) {
     const schoolLat = parseFloat(process.env.SCHOOL_LAT || '-6.5694')
     const schoolLng = parseFloat(process.env.SCHOOL_LNG || '107.7588')
 
+    // Simpan foto SPPD jika diunggah
+    let sppdPhotoPath: string | null = null
+    if (data.hasSppd && data.sppdPhotoBase64) {
+      try {
+        const matches = data.sppdPhotoBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1]
+          const buffer = Buffer.from(matches[2], 'base64')
+          const ext = mimeType.includes('png') ? '.png' : mimeType.includes('webp') ? '.webp' : '.jpg'
+          const stored = await saveFile(buffer, 'sppd', mimeType, `sppd_${bookingCode}${ext}`)
+          sppdPhotoPath = stored.relativePath
+        }
+      } catch (sppdErr) {
+        console.error('[SPPD Upload Error]', sppdErr)
+      }
+    }
+
     // Buat booking
     const booking = await prisma.booking.create({
       data: {
@@ -123,6 +140,14 @@ export async function POST(request: NextRequest) {
         departureDatetime: new Date(data.departureDatetime),
         returnDatetime: new Date(data.returnDatetime),
         additionalNotes: data.additionalNotes || null,
+        // Manifesting & SPPD
+        driverName: data.driverName || null,
+        driverPhone: data.driverPhone || null,
+        passengerCount: data.passengerCount || 1,
+        passengers: data.passengers?.length ? data.passengers : Prisma.JsonNull,
+        passengerNotes: data.passengerNotes || null,
+        hasSppd: Boolean(data.hasSppd),
+        sppdPhotoPath,
         status: 'MENUNGGU_PERSETUJUAN',
       },
     })
@@ -205,6 +230,11 @@ export async function POST(request: NextRequest) {
 
       // Kirim juga ke Kepala Sekolah (APPROVER) dan Pengelola SIPKO
       const approvers = await getApproverPhoneNumbers()
+      const passengerSummary = [
+        ...(data.passengers && data.passengers.length ? [data.passengers.join(', ')] : []),
+        ...(data.passengerNotes ? [`Catatan: ${data.passengerNotes}`] : []),
+      ].join(' | ') || (data.passengerCount ? `${data.passengerCount} orang` : undefined)
+
       for (const approver of approvers) {
         const adminMsg = WA_TEMPLATES.bookingCreatedAdmin({
           nama_petugas: approver.name,
@@ -212,6 +242,9 @@ export async function POST(request: NextRequest) {
           nip: data.applicantNip || '-',
           jabatan: data.applicantJabatan,
           kendaraan: vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : undefined,
+          supir: data.driverName ? `${data.driverName}${data.driverPhone ? ` (${data.driverPhone})` : ''}` : undefined,
+          penumpang: passengerSummary || undefined,
+          sppd: data.hasSppd ? '✅ Ada Lampiran Dokumen SPPD' : 'Tidak Ada',
           waktu_pinjam: formatWaDate(data.departureDatetime),
           waktu_kembali: formatWaDate(data.returnDatetime),
           tujuan: data.destinationName,
