@@ -195,6 +195,15 @@ model Booking {
   returnDatetime      DateTime
   actualDepartureAt   DateTime?
   actualReturnAt      DateTime?
+  // Manifesting & Penumpang
+  driverName          String?       @db.VarChar(255)
+  driverPhone         String?       @db.VarChar(20)
+  passengerCount      Int?          @default(1)
+  passengers          Json?         // Array of string nama guru/staf
+  passengerNotes      String?       @db.Text      // Catatan siswa / peserta pendamping
+  // SPPD
+  hasSppd             Boolean       @default(false)
+  sppdPhotoPath       String?       @db.VarChar(500)
   // Status
   status              BookingStatus @default(MENUNGGU_PERSETUJUAN)
   isOverdue           Boolean       @default(false)
@@ -399,4 +408,28 @@ model AuditLog {
   @@index([actorId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================
+// EMPLOYEES (DATA MASTER GURU & TENDIK PEMOHON)
+// ============================================================
+
+model Employee {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(255)
+  nip         String?   @db.VarChar(50)
+  nuptk       String?   @db.VarChar(50)
+  pangkatGol  String?   @db.VarChar(100)
+  jabatan     String?   @db.VarChar(255)
+  unit        String?   @db.VarChar(255)
+  phoneWa     String?   @db.VarChar(20)
+  gender      String?   @db.VarChar(10)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([name])
+  @@index([nip])
+  @@map("employees")
 }
