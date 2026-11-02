@@ -88,14 +88,96 @@ export default function CekBookingPage() {
   const [fuelNotes, setFuelNotes] = useState('')
   const [fuelPhoto, setFuelPhoto] = useState<File | null>(null)
 
+  const syncCodeDigits = (fullCode: string) => {
+    const clean = fullCode.replace(/SIP-?/i, '').replace(/[^A-Z0-9]/gi, '')
+    const chars = clean.slice(0, 4).split('')
+    const newDigits = ['', '', '', '']
+    chars.forEach((c, i) => {
+      if (i < 4) newDigits[i] = c
+    })
+    setCodeDigits(newDigits)
+  }
+
+  const handleDigitChange = (index: number, val: string) => {
+    const upper = val.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    if (!upper) {
+      const newDigits = [...codeDigits]
+      newDigits[index] = ''
+      setCodeDigits(newDigits)
+      setBookingCode(`SIP-${newDigits.join('')}`)
+      return
+    }
+
+    if (upper.length > 1) {
+      const clean = upper.slice(0, 4 - index)
+      const newDigits = [...codeDigits]
+      for (let i = 0; i < clean.length; i++) {
+        if (index + i < 4) newDigits[index + i] = clean[i]
+      }
+      setCodeDigits(newDigits)
+      setBookingCode(`SIP-${newDigits.join('')}`)
+      const nextIdx = Math.min(index + clean.length, 3)
+      inputRefs.current[nextIdx]?.focus()
+      return
+    }
+
+    const newDigits = [...codeDigits]
+    newDigits[index] = upper[0]
+    setCodeDigits(newDigits)
+    setBookingCode(`SIP-${newDigits.join('')}`)
+
+    if (index < 3) {
+      inputRefs.current[index + 1]?.focus()
+    } else {
+      if (!phoneWa) {
+        phoneInputRef.current?.focus()
+      }
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !codeDigits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    } else if (e.key === 'ArrowRight' && index < 3) {
+      inputRefs.current[index + 1]?.focus()
+    } else if (e.key === 'Enter') {
+      handleCheck()
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text').trim().toUpperCase()
+    const clean = text.replace(/SIP-?/i, '').replace(/[^A-Z0-9]/gi, '')
+    const chars = clean.slice(0, 4).split('')
+    const newDigits = ['', '', '', '']
+    chars.forEach((c, i) => {
+      if (i < 4) newDigits[i] = c
+    })
+    setCodeDigits(newDigits)
+    setBookingCode(`SIP-${newDigits.join('')}`)
+    const nextIdx = Math.min(chars.length, 3)
+    inputRefs.current[nextIdx]?.focus()
+  }
+
   const handleCheck = async (overrideCode?: string, overridePhone?: string) => {
-    const rawCode = typeof overrideCode === 'string' ? overrideCode : bookingCode
+    const entered = codeDigits.join('').trim().toUpperCase()
+    let code = ''
+    if (typeof overrideCode === 'string') {
+      code = overrideCode.trim().toUpperCase()
+    } else if (entered.length > 0) {
+      code = `SIP-${entered}`
+    } else {
+      code = (bookingCode || '').trim().toUpperCase()
+    }
+
     const rawPhone = typeof overridePhone === 'string' ? overridePhone : phoneWa
-    const code = (rawCode || '').trim().toUpperCase()
     const phone = (rawPhone || '').trim()
 
-    if (!code || !phone) {
-      setError('Masukkan kode booking dan nomor WhatsApp.')
+    if (!code || code === 'SIP-' || !phone) {
+      setError('Masukkan 4 digit kode booking dan nomor WhatsApp Anda.')
       return
     }
     if (attempts >= 15) {
@@ -124,6 +206,7 @@ export default function CekBookingPage() {
       }
       setBooking(data.booking)
       setBookingCode(code)
+      syncCodeDigits(code)
       setPhoneWa(phone)
       if (typeof window !== 'undefined') {
         sessionStorage.setItem(
@@ -147,6 +230,7 @@ export default function CekBookingPage() {
         const parsed = JSON.parse(saved)
         if (parsed.bookingCode && parsed.phoneWa) {
           setBookingCode(parsed.bookingCode)
+          syncCodeDigits(parsed.bookingCode)
           setPhoneWa(parsed.phoneWa)
           handleCheck(parsed.bookingCode, parsed.phoneWa)
           return
@@ -158,6 +242,7 @@ export default function CekBookingPage() {
       const qCode = params.get('code')
       if (qCode) {
         setBookingCode(qCode.toUpperCase())
+        syncCodeDigits(qCode.toUpperCase())
       }
     } catch (e) {
       console.error('[Session Restore Error]', e)
@@ -170,6 +255,7 @@ export default function CekBookingPage() {
     }
     setBooking(null)
     setBookingCode('')
+    setCodeDigits(['', '', '', ''])
     setPhoneWa('')
     setError('')
     setActionMessage('')
@@ -353,24 +439,81 @@ export default function CekBookingPage() {
           <div className="card animate-slide-up">
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div className="form-group">
-                <label className="form-label">Kode Booking <span className="required">*</span></label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Contoh: SIP-ABCD"
-                  value={bookingCode}
-                  onChange={(e) => setBookingCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCheck()
-                  }}
-                  style={{ fontFamily: 'monospace', fontSize: '1.125rem', letterSpacing: '0.05em' }}
-                  maxLength={12}
-                />
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
+                  <span>Kode Verifikasi Booking <span className="required">*</span></span>
+                  <span style={{ fontSize: '0.75rem', color: '#0d9488', fontWeight: 600, background: '#f0fdfa', padding: '0.125rem 0.5rem', borderRadius: '4px', border: '1px solid #ccfbf1' }}>
+                    4 Digit Unik
+                  </span>
+                </label>
+
+                {/* Input Model Kode Verifikasi OTP */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+                  {/* Badge Awalan SIP - */}
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 0.875rem',
+                      height: '3.5rem',
+                      background: '#f8fafc',
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: 'var(--radius-lg, 12px)',
+                      fontWeight: 800,
+                      fontSize: '1.125rem',
+                      color: '#475569',
+                      letterSpacing: '0.075em',
+                      userSelect: 'none',
+                    }}
+                    title="Awalan sistem otomatis"
+                  >
+                    SIP —
+                  </div>
+
+                  {/* 4 Kotak Digit Kode Verifikasi */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {[0, 1, 2, 3].map((idx) => (
+                      <input
+                        key={idx}
+                        ref={(el) => { inputRefs.current[idx] = el }}
+                        type="text"
+                        maxLength={1}
+                        value={codeDigits[idx]}
+                        onChange={(e) => handleDigitChange(idx, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                        onPaste={handlePaste}
+                        autoComplete="off"
+                        placeholder="•"
+                        style={{
+                          width: '3.1rem',
+                          height: '3.5rem',
+                          textAlign: 'center',
+                          fontSize: '1.5rem',
+                          fontWeight: 800,
+                          fontFamily: 'monospace',
+                          textTransform: 'uppercase',
+                          borderRadius: 'var(--radius-lg, 12px)',
+                          border: codeDigits[idx] ? '2px solid #0d9488' : '1.5px solid #cbd5e1',
+                          background: codeDigits[idx] ? '#f0fdfa' : '#ffffff',
+                          color: '#0f172a',
+                          outline: 'none',
+                          boxShadow: codeDigits[idx] ? '0 0 0 3px rgba(13, 148, 136, 0.15)' : 'none',
+                          transition: 'all 0.15s ease',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <span className="form-hint" style={{ marginTop: '0.5rem', display: 'block', fontSize: '0.8125rem', color: '#64748b' }}>
+                  💡 Cukup ketik 4 karakter unik Anda (contoh: <strong>{codeDigits.filter(Boolean).length > 0 ? codeDigits.join('') : 'JM2Q'}</strong>). Awalan SIP— otomatis disertakan.
+                </span>
               </div>
 
               <div className="form-group">
                 <label className="form-label">Nomor WhatsApp <span className="required">*</span></label>
                 <input
+                  ref={phoneInputRef}
                   className="form-input"
                   type="tel"
                   placeholder="Contoh: 08123456789"
