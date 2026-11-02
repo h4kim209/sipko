@@ -469,60 +469,106 @@ export default function PengajuanPage() {
                       placeholder="Cari nama guru atau staf dari daftar..."
                     />
                     {errors.applicantName && <span className="form-error">⚠ {errors.applicantName}</span>}
-                    <span className="form-hint">Ketik untuk mencari dari daftar guru, NIP & No. WhatsApp akan terisi otomatis.</span>
                   </div>
 
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label">NIP</label>
-                      <input
-                        className="form-input"
-                        type="text"
-                        placeholder="Jika ada"
-                        value={form.applicantNip}
-                        onChange={(e) => setForm((f) => ({ ...f, applicantNip: e.target.value }))}
-                      />
-                      <span className="form-hint">Kosongkan jika tidak memiliki NIP</span>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Jabatan <span className="required">*</span></label>
-                      <input
-                        className={inputClass('applicantJabatan')}
-                        type="text"
-                        placeholder="Contoh: Guru, Staff TU"
-                        value={form.applicantJabatan}
-                        onChange={(e) => setForm((f) => ({ ...f, applicantJabatan: e.target.value }))}
-                      />
-                      {errors.applicantJabatan && <span className="form-error">⚠ {errors.applicantJabatan}</span>}
-                    </div>
-                  </div>
+                  {/* Tampilkan detail biodata otomatis saat nama dipilih (tanpa text box berulang) */}
+                  {form.applicantName ? (
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1.5px solid #ccfbf1',
+                        borderRadius: 'var(--radius-lg, 12px)',
+                        padding: '1rem',
+                        boxShadow: '0 2px 6px rgba(13, 148, 136, 0.05)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                          gap: '0.875rem',
+                          fontSize: '0.8125rem',
+                        }}
+                      >
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                            NIP:
+                          </div>
+                          <div style={{ color: '#0f172a', fontWeight: 700, fontFamily: form.applicantNip ? 'monospace' : 'inherit', marginTop: '2px' }}>
+                            {form.applicantNip || '-'}
+                          </div>
+                        </div>
 
-                  <div className="grid-2">
-                    <div className="form-group">
-                      <label className="form-label">Unit/Bagian</label>
-                      <input
-                        className="form-input"
-                        type="text"
-                        placeholder="Contoh: Kurikulum, Kesiswaan"
-                        value={form.applicantUnit}
-                        onChange={(e) => setForm((f) => ({ ...f, applicantUnit: e.target.value }))}
-                      />
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                            Jabatan:
+                          </div>
+                          <div style={{ color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
+                            {form.applicantJabatan || 'Guru / Tendik'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                            Unit / Bagian:
+                          </div>
+                          <div style={{ color: '#0f172a', fontWeight: 700, marginTop: '2px' }}>
+                            {form.applicantUnit || 'SMK Negeri 1 Subang'}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ color: '#64748b', fontSize: '0.725rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                            Nomor WhatsApp:
+                          </div>
+                          <div style={{ color: '#0d9488', fontWeight: 800, marginTop: '2px' }}>
+                            {form.applicantPhoneWa ? `💬 ${form.applicantPhoneWa}` : <span style={{ color: '#dc2626' }}>Belum terdaftar</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Input cadangan jika nomor WA belum terdaftar di database */}
+                      {!form.applicantPhoneWa && (
+                        <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626', display: 'block', marginBottom: '0.25rem' }}>
+                            ⚠ Nomor WhatsApp belum terdaftar di database. Masukkan nomor WhatsApp aktif Anda:
+                          </label>
+                          <input
+                            type="tel"
+                            className="form-input"
+                            placeholder="Contoh: 08123456789"
+                            value={form.applicantPhoneWa}
+                            onChange={(e) => setForm((f) => ({ ...f, applicantPhoneWa: e.target.value }))}
+                            style={{ background: '#ffffff', fontSize: '0.8125rem' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Keterangan pelaporan ke pengembang aplikasi */}
+                      <div
+                        style={{
+                          marginTop: '0.875rem',
+                          paddingTop: '0.625rem',
+                          borderTop: '1px dashed #cbd5e1',
+                          fontSize: '0.725rem',
+                          color: '#64748b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        <span style={{ fontSize: '0.875rem' }}>ℹ️</span>
+                        <span>
+                          Jika ada kesalahan data NIP, jabatan, atau nomor WhatsApp, mohon melapor ke bagian <strong>Pengembang Aplikasi SMKN 1 Subang</strong>.
+                        </span>
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Nomor WhatsApp <span className="required">*</span></label>
-                      <input
-                        className={inputClass('applicantPhoneWa')}
-                        type="tel"
-                        placeholder="Contoh: 08123456789"
-                        value={form.applicantPhoneWa}
-                        onChange={(e) => setForm((f) => ({ ...f, applicantPhoneWa: e.target.value }))}
-                      />
-                      {errors.applicantPhoneWa
-                        ? <span className="form-error">⚠ {errors.applicantPhoneWa}</span>
-                        : <span className="form-hint">Notifikasi status dikirim ke nomor ini</span>
-                      }
+                  ) : (
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic', marginTop: '-0.25rem' }}>
+                      Pilih nama Anda dari daftar di atas, NIP, jabatan, dan nomor WhatsApp akan terisi otomatis dari database.
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
