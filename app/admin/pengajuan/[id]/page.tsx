@@ -177,11 +177,11 @@ export default async function BookingDetailPage({
         </div>
       </div>
 
-      {/* Manifesting & Dokumen SPPD */}
+      {/* Pengemudi & Penumpang serta Dokumen SPPD */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
-        {/* Manifesting Armada */}
+        {/* Pengemudi & Penumpang */}
         <div className="card">
-          <div className="card-header"><h3>👥 Manifesting Armada</h3></div>
+          <div className="card-header"><h3>👥 Pengemudi & Penumpang</h3></div>
           <div className="card-body">
             <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
               <div style={{ display: 'flex', gap: 'var(--space-3)', fontSize: 'var(--font-size-sm)', borderBottom: '1px solid var(--color-gray-100)', paddingBottom: 'var(--space-2)' }}>
