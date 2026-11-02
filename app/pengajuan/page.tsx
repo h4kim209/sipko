@@ -524,6 +524,252 @@ export default function PengajuanPage() {
 
               <hr className="divider" />
 
+              {/* Manifesting & Penumpang */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  👥 Manifesting Armada (Pengemudi & Penumpang)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {/* Pilihan Supir */}
+                  <div className="form-group">
+                    <label className="form-label">Pengemudi / Supir Kendaraan <span className="required">*</span></label>
+                    <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'PEMOHON'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'PEMOHON' }))}
+                        />
+                        <span>Pemohon Sendiri ({form.applicantName || 'Saya'})</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'GURU_LAIN'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'GURU_LAIN' }))}
+                        />
+                        <span>Guru / Staf Lain</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'SUPIR_LUAR'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'SUPIR_LUAR' }))}
+                        />
+                        <span>Supir Sekolah / Luar</span>
+                      </label>
+                    </div>
+
+                    {form.driverType === 'GURU_LAIN' && (
+                      <div style={{ marginTop: '0.25rem' }}>
+                        <EmployeeCombobox
+                          value={form.driverName}
+                          onChange={(val) => setForm((f) => ({ ...f, driverName: val }))}
+                          onSelectEmployee={(emp) => {
+                            setForm((f) => ({
+                              ...f,
+                              driverName: emp.name,
+                              driverPhone: emp.phoneWa || f.driverPhone,
+                            }))
+                          }}
+                          placeholder="Cari nama guru yang bertugas mengemudi..."
+                        />
+                      </div>
+                    )}
+
+                    {form.driverType === 'SUPIR_LUAR' && (
+                      <div className="grid-2" style={{ marginTop: '0.25rem' }}>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="text"
+                            placeholder="Nama Supir..."
+                            value={form.driverName}
+                            onChange={(e) => setForm((f) => ({ ...f, driverName: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="tel"
+                            placeholder="Nomor HP/WA Supir..."
+                            value={form.driverPhone}
+                            onChange={(e) => setForm((f) => ({ ...f, driverPhone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Penumpang Guru / Staf */}
+                  <div className="form-group">
+                    <label className="form-label">Daftar Penumpang Guru / Staf yang Ikut</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <EmployeeCombobox
+                          value={passengerInput}
+                          onChange={setPassengerInput}
+                          onSelectEmployee={(emp) => {
+                            if (!form.passengers.includes(emp.name)) {
+                              setForm((f) => ({
+                                ...f,
+                                passengers: [...f.passengers, emp.name],
+                                passengerCount: f.passengers.length + 2,
+                              }))
+                            }
+                            setPassengerInput('')
+                          }}
+                          placeholder="Ketik & pilih nama guru/staf yang ikut..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          if (passengerInput.trim() && !form.passengers.includes(passengerInput.trim())) {
+                            setForm((f) => ({
+                              ...f,
+                              passengers: [...f.passengers, passengerInput.trim()],
+                              passengerCount: f.passengers.length + 2,
+                            }))
+                            setPassengerInput('')
+                          }
+                        }}
+                      >
+                        + Tambah
+                      </button>
+                    </div>
+
+                    {form.passengers.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {form.passengers.map((p, idx) => (
+                          <span
+                            key={idx}
+                            className="badge status-approved"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.625rem', fontSize: '0.8rem' }}
+                          >
+                            <span>👤 {p}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((f) => ({
+                                  ...f,
+                                  passengers: f.passengers.filter((_, i) => i !== idx),
+                                  passengerCount: Math.max(1, f.passengers.length),
+                                }))
+                              }}
+                              style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem', padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Catatan Siswa / Tamu */}
+                  <div className="form-group">
+                    <label className="form-label">Catatan Penumpang Siswa / Peserta Lainnya</label>
+                    <textarea
+                      className="form-textarea"
+                      placeholder="Contoh: Diikuti 4 siswa kontingen LKS (Ahmad, Budi, Siti, Rian)..."
+                      value={form.passengerNotes}
+                      rows={2}
+                      onChange={(e) => setForm((f) => ({ ...f, passengerNotes: e.target.value }))}
+                    />
+                    <span className="form-hint">Cantumkan bila ada siswa atau pihak pendamping luar sekolah yang turut serta di armada.</span>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              {/* Dokumen SPPD */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  📄 Surat Perintah Perjalanan Dinas (SPPD)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Apakah perjalanan dinas ini memiliki dokumen SPPD / Surat Tugas?</label>
+                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: true }))}
+                        />
+                        <span style={{ fontWeight: 600, color: '#0d9488' }}>Ya, ada dokumen SPPD</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={!form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: false, sppdPhotoBase64: '' }))}
+                        />
+                        <span>Tidak Ada</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {form.hasSppd && (
+                    <div className="form-group" style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px dashed #cbd5e1' }}>
+                      <label className="form-label">Unggah Foto Dokumen SPPD / Surat Tugas</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleSppdPhotoUpload}
+                        className="form-input"
+                        style={{ background: '#fff' }}
+                      />
+                      <span className="form-hint">Ambil foto dokumen langsung dari kamera HP atau pilih file dari galeri.</span>
+
+                      {form.sppdPhotoBase64 && (
+                        <div style={{ marginTop: '0.75rem', position: 'relative', display: 'inline-block' }}>
+                          <img
+                            src={form.sppdPhotoBase64}
+                            alt="Preview SPPD"
+                            style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setForm((f) => ({ ...f, sppdPhotoBase64: '' }))}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '22px',
+                              height: '22px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <hr className="divider" />
+
               {/* Kendaraan */}
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
@@ -608,6 +854,252 @@ export default function PengajuanPage() {
                       onChange={(e) => setForm((f) => ({ ...f, purposeNotes: e.target.value }))}
                     />
                   </div>
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              {/* Manifesting & Penumpang */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  👥 Manifesting Armada (Pengemudi & Penumpang)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {/* Pilihan Supir */}
+                  <div className="form-group">
+                    <label className="form-label">Pengemudi / Supir Kendaraan <span className="required">*</span></label>
+                    <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'PEMOHON'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'PEMOHON' }))}
+                        />
+                        <span>Pemohon Sendiri ({form.applicantName || 'Saya'})</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'GURU_LAIN'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'GURU_LAIN' }))}
+                        />
+                        <span>Guru / Staf Lain</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'SUPIR_LUAR'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'SUPIR_LUAR' }))}
+                        />
+                        <span>Supir Sekolah / Luar</span>
+                      </label>
+                    </div>
+
+                    {form.driverType === 'GURU_LAIN' && (
+                      <div style={{ marginTop: '0.25rem' }}>
+                        <EmployeeCombobox
+                          value={form.driverName}
+                          onChange={(val) => setForm((f) => ({ ...f, driverName: val }))}
+                          onSelectEmployee={(emp) => {
+                            setForm((f) => ({
+                              ...f,
+                              driverName: emp.name,
+                              driverPhone: emp.phoneWa || f.driverPhone,
+                            }))
+                          }}
+                          placeholder="Cari nama guru yang bertugas mengemudi..."
+                        />
+                      </div>
+                    )}
+
+                    {form.driverType === 'SUPIR_LUAR' && (
+                      <div className="grid-2" style={{ marginTop: '0.25rem' }}>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="text"
+                            placeholder="Nama Supir..."
+                            value={form.driverName}
+                            onChange={(e) => setForm((f) => ({ ...f, driverName: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="tel"
+                            placeholder="Nomor HP/WA Supir..."
+                            value={form.driverPhone}
+                            onChange={(e) => setForm((f) => ({ ...f, driverPhone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Penumpang Guru / Staf */}
+                  <div className="form-group">
+                    <label className="form-label">Daftar Penumpang Guru / Staf yang Ikut</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <EmployeeCombobox
+                          value={passengerInput}
+                          onChange={setPassengerInput}
+                          onSelectEmployee={(emp) => {
+                            if (!form.passengers.includes(emp.name)) {
+                              setForm((f) => ({
+                                ...f,
+                                passengers: [...f.passengers, emp.name],
+                                passengerCount: f.passengers.length + 2,
+                              }))
+                            }
+                            setPassengerInput('')
+                          }}
+                          placeholder="Ketik & pilih nama guru/staf yang ikut..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          if (passengerInput.trim() && !form.passengers.includes(passengerInput.trim())) {
+                            setForm((f) => ({
+                              ...f,
+                              passengers: [...f.passengers, passengerInput.trim()],
+                              passengerCount: f.passengers.length + 2,
+                            }))
+                            setPassengerInput('')
+                          }
+                        }}
+                      >
+                        + Tambah
+                      </button>
+                    </div>
+
+                    {form.passengers.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {form.passengers.map((p, idx) => (
+                          <span
+                            key={idx}
+                            className="badge status-approved"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.625rem', fontSize: '0.8rem' }}
+                          >
+                            <span>👤 {p}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((f) => ({
+                                  ...f,
+                                  passengers: f.passengers.filter((_, i) => i !== idx),
+                                  passengerCount: Math.max(1, f.passengers.length),
+                                }))
+                              }}
+                              style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem', padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Catatan Siswa / Tamu */}
+                  <div className="form-group">
+                    <label className="form-label">Catatan Penumpang Siswa / Peserta Lainnya</label>
+                    <textarea
+                      className="form-textarea"
+                      placeholder="Contoh: Diikuti 4 siswa kontingen LKS (Ahmad, Budi, Siti, Rian)..."
+                      value={form.passengerNotes}
+                      rows={2}
+                      onChange={(e) => setForm((f) => ({ ...f, passengerNotes: e.target.value }))}
+                    />
+                    <span className="form-hint">Cantumkan bila ada siswa atau pihak pendamping luar sekolah yang turut serta di armada.</span>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              {/* Dokumen SPPD */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  📄 Surat Perintah Perjalanan Dinas (SPPD)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Apakah perjalanan dinas ini memiliki dokumen SPPD / Surat Tugas?</label>
+                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: true }))}
+                        />
+                        <span style={{ fontWeight: 600, color: '#0d9488' }}>Ya, ada dokumen SPPD</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={!form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: false, sppdPhotoBase64: '' }))}
+                        />
+                        <span>Tidak Ada</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {form.hasSppd && (
+                    <div className="form-group" style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px dashed #cbd5e1' }}>
+                      <label className="form-label">Unggah Foto Dokumen SPPD / Surat Tugas</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleSppdPhotoUpload}
+                        className="form-input"
+                        style={{ background: '#fff' }}
+                      />
+                      <span className="form-hint">Ambil foto dokumen langsung dari kamera HP atau pilih file dari galeri.</span>
+
+                      {form.sppdPhotoBase64 && (
+                        <div style={{ marginTop: '0.75rem', position: 'relative', display: 'inline-block' }}>
+                          <img
+                            src={form.sppdPhotoBase64}
+                            alt="Preview SPPD"
+                            style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setForm((f) => ({ ...f, sppdPhotoBase64: '' }))}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '22px',
+                              height: '22px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -758,6 +1250,252 @@ export default function PengajuanPage() {
                     />
                     {errors.returnDatetime && <span className="form-error">⚠ {errors.returnDatetime}</span>}
                   </div>
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              {/* Manifesting & Penumpang */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  👥 Manifesting Armada (Pengemudi & Penumpang)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {/* Pilihan Supir */}
+                  <div className="form-group">
+                    <label className="form-label">Pengemudi / Supir Kendaraan <span className="required">*</span></label>
+                    <div style={{ display: 'flex', gap: '1.25rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'PEMOHON'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'PEMOHON' }))}
+                        />
+                        <span>Pemohon Sendiri ({form.applicantName || 'Saya'})</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'GURU_LAIN'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'GURU_LAIN' }))}
+                        />
+                        <span>Guru / Staf Lain</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="driverType"
+                          checked={form.driverType === 'SUPIR_LUAR'}
+                          onChange={() => setForm((f) => ({ ...f, driverType: 'SUPIR_LUAR' }))}
+                        />
+                        <span>Supir Sekolah / Luar</span>
+                      </label>
+                    </div>
+
+                    {form.driverType === 'GURU_LAIN' && (
+                      <div style={{ marginTop: '0.25rem' }}>
+                        <EmployeeCombobox
+                          value={form.driverName}
+                          onChange={(val) => setForm((f) => ({ ...f, driverName: val }))}
+                          onSelectEmployee={(emp) => {
+                            setForm((f) => ({
+                              ...f,
+                              driverName: emp.name,
+                              driverPhone: emp.phoneWa || f.driverPhone,
+                            }))
+                          }}
+                          placeholder="Cari nama guru yang bertugas mengemudi..."
+                        />
+                      </div>
+                    )}
+
+                    {form.driverType === 'SUPIR_LUAR' && (
+                      <div className="grid-2" style={{ marginTop: '0.25rem' }}>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="text"
+                            placeholder="Nama Supir..."
+                            value={form.driverName}
+                            onChange={(e) => setForm((f) => ({ ...f, driverName: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <input
+                            className="form-input"
+                            type="tel"
+                            placeholder="Nomor HP/WA Supir..."
+                            value={form.driverPhone}
+                            onChange={(e) => setForm((f) => ({ ...f, driverPhone: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Penumpang Guru / Staf */}
+                  <div className="form-group">
+                    <label className="form-label">Daftar Penumpang Guru / Staf yang Ikut</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <EmployeeCombobox
+                          value={passengerInput}
+                          onChange={setPassengerInput}
+                          onSelectEmployee={(emp) => {
+                            if (!form.passengers.includes(emp.name)) {
+                              setForm((f) => ({
+                                ...f,
+                                passengers: [...f.passengers, emp.name],
+                                passengerCount: f.passengers.length + 2,
+                              }))
+                            }
+                            setPassengerInput('')
+                          }}
+                          placeholder="Ketik & pilih nama guru/staf yang ikut..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          if (passengerInput.trim() && !form.passengers.includes(passengerInput.trim())) {
+                            setForm((f) => ({
+                              ...f,
+                              passengers: [...f.passengers, passengerInput.trim()],
+                              passengerCount: f.passengers.length + 2,
+                            }))
+                            setPassengerInput('')
+                          }
+                        }}
+                      >
+                        + Tambah
+                      </button>
+                    </div>
+
+                    {form.passengers.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        {form.passengers.map((p, idx) => (
+                          <span
+                            key={idx}
+                            className="badge status-approved"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.375rem 0.625rem', fontSize: '0.8rem' }}
+                          >
+                            <span>👤 {p}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm((f) => ({
+                                  ...f,
+                                  passengers: f.passengers.filter((_, i) => i !== idx),
+                                  passengerCount: Math.max(1, f.passengers.length),
+                                }))
+                              }}
+                              style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 800, fontSize: '0.8rem', padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Catatan Siswa / Tamu */}
+                  <div className="form-group">
+                    <label className="form-label">Catatan Penumpang Siswa / Peserta Lainnya</label>
+                    <textarea
+                      className="form-textarea"
+                      placeholder="Contoh: Diikuti 4 siswa kontingen LKS (Ahmad, Budi, Siti, Rian)..."
+                      value={form.passengerNotes}
+                      rows={2}
+                      onChange={(e) => setForm((f) => ({ ...f, passengerNotes: e.target.value }))}
+                    />
+                    <span className="form-hint">Cantumkan bila ada siswa atau pihak pendamping luar sekolah yang turut serta di armada.</span>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="divider" />
+
+              {/* Dokumen SPPD */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--color-primary-100)' }}>
+                  📄 Surat Perintah Perjalanan Dinas (SPPD)
+                </h3>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Apakah perjalanan dinas ini memiliki dokumen SPPD / Surat Tugas?</label>
+                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.25rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: true }))}
+                        />
+                        <span style={{ fontWeight: 600, color: '#0d9488' }}>Ya, ada dokumen SPPD</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          name="hasSppd"
+                          checked={!form.hasSppd}
+                          onChange={() => setForm((f) => ({ ...f, hasSppd: false, sppdPhotoBase64: '' }))}
+                        />
+                        <span>Tidak Ada</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {form.hasSppd && (
+                    <div className="form-group" style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px dashed #cbd5e1' }}>
+                      <label className="form-label">Unggah Foto Dokumen SPPD / Surat Tugas</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleSppdPhotoUpload}
+                        className="form-input"
+                        style={{ background: '#fff' }}
+                      />
+                      <span className="form-hint">Ambil foto dokumen langsung dari kamera HP atau pilih file dari galeri.</span>
+
+                      {form.sppdPhotoBase64 && (
+                        <div style={{ marginTop: '0.75rem', position: 'relative', display: 'inline-block' }}>
+                          <img
+                            src={form.sppdPhotoBase64}
+                            alt="Preview SPPD"
+                            style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setForm((f) => ({ ...f, sppdPhotoBase64: '' }))}
+                            style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: '22px',
+                              height: '22px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
